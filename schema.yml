@@ -747,6 +747,7 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/CompanyDefaultsRequest'
+        required: true
       security:
         - cookieAuth: []
       responses:
@@ -7882,6 +7883,12 @@ components:
           exclusiveMinimum: true
           description: Percentage added to base_wage_rate to get costing wage_rate
             (8.00 = 8%)
+        financial_year_start_month:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Month the financial year starts (1=January, 4=April, 7=July,
+            etc.)
         starting_job_number:
           type: integer
           maximum: 2147483647
@@ -8077,9 +8084,19 @@ components:
           exclusiveMinimum: true
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
+        job_gp_target_percentage:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Target GP % per Job
+          description: Target gross profit percentage for jobs
       required:
         - company_name
         - created_at
+        - job_gp_target_percentage
         - updated_at
     CompanyDefaultsJobDetail:
       type: object
@@ -8153,6 +8170,12 @@ components:
           exclusiveMinimum: true
           description: Percentage added to base_wage_rate to get costing wage_rate
             (8.00 = 8%)
+        financial_year_start_month:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Month the financial year starts (1=January, 4=April, 7=July,
+            etc.)
         starting_job_number:
           type: integer
           maximum: 2147483647
@@ -8343,6 +8366,17 @@ components:
           exclusiveMinimum: true
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
+        job_gp_target_percentage:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Target GP % per Job
+          description: Target gross profit percentage for jobs
+      required:
+        - job_gp_target_percentage
     CompanyDefaultsSchema:
       type: object
       description: Serializer for the complete schema response.
@@ -10653,9 +10687,9 @@ components:
           type: string
           nullable: true
           description: Date job was completed (ISO format)
-        job_value:
+        revenue:
           type: string
-          description: Total job value
+          description: Job revenue (from invoices)
         estimate:
           allOf:
             - $ref: '#/components/schemas/CostSetMetrics'
@@ -10683,12 +10717,12 @@ components:
         - job_id
         - job_name
         - job_number
-        - job_value
         - pricing_type
         - pricing_type_display
         - profit_variance
         - profit_variance_pct
         - quote
+        - revenue
     JobProfitabilityReportResponse:
       type: object
       description: Top-level response for the job profitability report.
@@ -10719,7 +10753,7 @@ components:
           description: Total number of jobs in report
         total_revenue:
           type: string
-          description: Sum of actual revenue
+          description: Sum of job revenue (from invoices)
         total_cost:
           type: string
           description: Sum of actual cost
@@ -10735,9 +10769,6 @@ components:
         total_baseline_profit:
           type: string
           description: Sum of baseline profit (quote for FP, estimate for T&M)
-        total_actual_profit:
-          type: string
-          description: Sum of actual profit
         total_variance:
           type: string
           description: Total profit variance
@@ -10759,7 +10790,6 @@ components:
         - overall_margin
         - profitable_jobs
         - tm_jobs
-        - total_actual_profit
         - total_baseline_profit
         - total_cost
         - total_jobs
@@ -12151,6 +12181,12 @@ components:
           exclusiveMinimum: true
           description: Percentage added to base_wage_rate to get costing wage_rate
             (8.00 = 8%)
+        financial_year_start_month:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          description: Month the financial year starts (1=January, 4=April, 7=July,
+            etc.)
         starting_job_number:
           type: integer
           maximum: 2147483647
@@ -12341,6 +12377,15 @@ components:
           exclusiveMinimum: true
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
+        job_gp_target_percentage:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Target GP % per Job
+          description: Target gross profit percentage for jobs
     PatchedCostLineCreateUpdateRequest:
       type: object
       description: Serializer for CostLine creation and updates - full write capabilities
@@ -16174,19 +16219,11 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
-        daily_base_cost:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
       required:
         - annual_leave_hours
         - bereavement_leave_hours
         - billable_hours
         - billed_hours
-        - daily_base_cost
         - daily_cost
         - day
         - hours
