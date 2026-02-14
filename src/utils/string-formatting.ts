@@ -95,6 +95,15 @@ export function formatCurrency(value: number | null | undefined): string {
 }
 
 /**
+ * Formats hours to 2 decimal places, trimming trailing zeros.
+ * e.g. 1 → "1", 1.5 → "1.5", 3.75 → "3.75"
+ */
+export function formatHoursDisplay(hours: number | null | undefined): string {
+  if (hours === null || hours === undefined || !Number.isFinite(hours)) return '0'
+  return parseFloat(hours.toFixed(2)).toString()
+}
+
+/**
  * Escapes a cell value for CSV format
  * Wraps in quotes and escapes internal quotes
  */

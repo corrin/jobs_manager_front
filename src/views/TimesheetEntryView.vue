@@ -62,8 +62,11 @@
               </div>
             </div>
 
-            <div class="text-xs text-gray-700">
-              <span class="font-semibold">{{ todayStats.totalHours.toFixed(1) }}h</span>
+            <div class="text-xs">
+              <span class="font-semibold" :class="hoursStatusClass">{{
+                formatHoursDisplay(todayStats.totalHours)
+              }}</span>
+              <span class="text-gray-400"> / {{ formatHoursDisplay(scheduledHours) }}h</span>
             </div>
           </div>
 
@@ -239,8 +242,11 @@
           </div>
 
           <div class="flex items-center space-x-2 ml-auto">
-            <div class="text-xs text-gray-700 mr-4">
-              <span class="font-semibold">{{ todayStats.totalHours.toFixed(1) }}h</span> Total
+            <div class="text-xs mr-4">
+              <span class="font-semibold" :class="hoursStatusClass">{{
+                formatHoursDisplay(todayStats.totalHours)
+              }}</span>
+              <span class="text-gray-400"> / {{ formatHoursDisplay(scheduledHours) }}h</span>
             </div>
 
             <Button
@@ -399,9 +405,9 @@
                         <div class="flex justify-between text-xs">
                           <span class="text-gray-600">Progress</span>
                           <span class="font-medium">
-                            {{ jobData.actualHours.toFixed(1) }}h
+                            {{ formatHoursDisplay(jobData.actualHours) }}h
                             <span v-if="jobData.estimatedHours > 0">
-                              / {{ jobData.estimatedHours.toFixed(1) }}h
+                              / {{ formatHoursDisplay(jobData.estimatedHours) }}h
                             </span>
                           </span>
                         </div>
@@ -431,7 +437,9 @@
                             <span v-if="jobData.estimatedHours > 0">
                               {{ jobData.completionPercentage.toFixed(1) }}% complete
                             </span>
-                            <span v-else> {{ jobData.actualHours.toFixed(1) }}h logged </span>
+                            <span v-else>
+                              {{ formatHoursDisplay(jobData.actualHours) }}h logged
+                            </span>
                           </span>
                           <span v-if="jobData.isOverBudget" class="text-red-600 font-medium">
                             Over Budget
@@ -478,7 +486,12 @@
                           <div class="min-w-0">
                             <p class="text-sm text-gray-600">Total Hours</p>
                             <p class="text-lg font-semibold">
-                              {{ consolidatedSummary.totalHours.toFixed(1) }}h
+                              <span :class="hoursStatusClass">{{
+                                formatHoursDisplay(consolidatedSummary.totalHours)
+                              }}</span>
+                              <span class="text-sm font-normal text-gray-400"
+                                >/ {{ formatHoursDisplay(scheduledHours) }}h</span
+                              >
                             </p>
                           </div>
                         </div>
@@ -571,7 +584,7 @@ import {
 import { useTimesheetAutosave } from '@/composables/useTimesheetAutosave'
 import { useTimesheetSummary } from '@/composables/useTimesheetSummary'
 import { toast } from 'vue-sonner'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, formatHoursDisplay } from '@/utils/string-formatting'
 
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
 import { useTimesheetStore } from '@/stores/timesheet'
@@ -681,6 +694,7 @@ const isInitializing = ref(true)
 const isLoadingData = ref(false) // ✅ Add loading flag to prevent duplicate calls
 
 const timeEntries = ref<TimesheetEntryViewRow[]>([])
+const scheduledHours = ref<number>(0)
 
 // Adapter to convert TimesheetEntryView data format to TimesheetCostLine format
 const adaptedTimeEntries = computed(() => {
@@ -720,6 +734,14 @@ const currentStaff = computed(() => {
 })
 
 const hasUnsavedChanges = ref(false)
+
+const hoursStatusClass = computed(() => {
+  const actual = timeEntries.value.reduce((sum, entry) => sum + getEntryHours(entry), 0)
+  const scheduled = scheduledHours.value
+  if (actual > scheduled) return 'text-red-600'
+  if (actual < scheduled) return 'text-amber-500'
+  return 'text-gray-900'
+})
 
 const todayStats = computed(() => {
   const totalHours = timeEntries.value.reduce((sum, entry) => sum + getEntryHours(entry), 0)
@@ -1695,6 +1717,15 @@ const loadTimesheetData = async () => {
         isModified: false,
       } as TimesheetEntryViewRow
     })
+
+    // Sort by creation time so entries stay in the order they were entered
+    timeEntries.value.sort((a, b) => {
+      const aTime = a.created_at ?? ''
+      const bTime = b.created_at ?? ''
+      return aTime < bTime ? -1 : aTime > bTime ? 1 : 0
+    })
+
+    scheduledHours.value = response.summary.scheduled_hours
 
     const staffData = timesheetStore.staff.find((s) => s.id === selectedStaffId.value)
     loadData(timeEntries.value, selectedStaffId.value, staffData)

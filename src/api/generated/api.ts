@@ -2149,6 +2149,7 @@ const ModernTimesheetSummary = z
     total_cost: z.number(),
     total_revenue: z.number(),
     entry_count: z.number().int(),
+    scheduled_hours: z.number(),
   })
   .passthrough()
 const ModernTimesheetEntryGetResponse = z
@@ -2858,6 +2859,7 @@ const WeeklyStaffDataWeeklyHours = z
     annual_leave_hours: z.number().gt(-100000000).lt(100000000),
     bereavement_leave_hours: z.number().gt(-100000000).lt(100000000),
     daily_cost: z.number().gt(-100000000).lt(100000000),
+    daily_base_cost: z.number().gt(-100000000).lt(100000000),
   })
   .passthrough()
 const WeeklyStaffData = z
