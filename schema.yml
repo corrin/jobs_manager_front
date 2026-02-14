@@ -4842,6 +4842,60 @@ paths:
               schema:
                 $ref: '#/components/schemas/MonthEndPostResponse'
           description: ''
+  /job/rest/reports/job-profitability/:
+    get:
+      operationId: job_profitability_report
+      description: Returns profitability data for completed/archived jobs in a date
+        range.
+      summary: Job profitability report
+      parameters:
+        - in: query
+          name: end_date
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: max_value
+          schema:
+            type: string
+        - in: query
+          name: min_value
+          schema:
+            type: string
+        - in: query
+          name: pricing_type
+          schema:
+            type: string
+        - in: query
+          name: start_date
+          schema:
+            type: string
+          required: true
+      tags:
+        - Reports
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobProfitabilityReportResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /job/rest/safety-ai/generate-controls/:
     post:
       operationId: job_rest_safety_ai_generate_controls_create
@@ -5804,6 +5858,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchasingErrorResponse'
+          description: ''
+  /purchasing/rest/purchase-orders/last-number/:
+    get:
+      operationId: getLastPurchaseOrderNumber
+      description: Return the most recent purchase order number.
+      tags:
+        - purchasing
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PurchaseOrderLastNumberResponse'
           description: ''
         '500':
           content:
@@ -7798,6 +7873,15 @@ components:
           minimum: -10000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        annual_leave_loading:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Percentage added to base_wage_rate to get costing wage_rate
+            (8.00 = 8%)
         starting_job_number:
           type: integer
           maximum: 2147483647
@@ -8060,6 +8144,15 @@ components:
           minimum: -10000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        annual_leave_loading:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Percentage added to base_wage_rate to get costing wage_rate
+            (8.00 = 8%)
         starting_job_number:
           type: integer
           maximum: 2147483647
@@ -8658,6 +8751,31 @@ components:
         * `estimate` - Estimate
         * `quote` - Quote
         * `actual` - Actual
+    CostSetMetrics:
+      type: object
+      description: Revenue/cost/profit/margin/hours for a single cost set.
+      properties:
+        revenue:
+          type: string
+          description: Revenue
+        cost:
+          type: string
+          description: Cost
+        profit:
+          type: string
+          description: Profit (revenue - cost)
+        margin:
+          type: string
+          description: Margin %
+        hours:
+          type: string
+          description: Hours
+      required:
+        - cost
+        - hours
+        - margin
+        - profit
+        - revenue
     CostSetSummary:
       type: object
       description: Serializer for CostSet summary data - used in cost analysis
@@ -9266,6 +9384,31 @@ components:
             type: string
         error:
           type: string
+    FiltersApplied:
+      type: object
+      description: Echo of the filters that were applied.
+      properties:
+        start_date:
+          type: string
+          description: Start date ISO string
+        end_date:
+          type: string
+          description: End date ISO string
+        min_value:
+          type: string
+          nullable: true
+          description: Min value filter
+        max_value:
+          type: string
+          nullable: true
+          description: Max value filter
+        pricing_type:
+          type: string
+          nullable: true
+          description: Pricing type filter
+      required:
+        - end_date
+        - start_date
     GenerateControlsRequestRequest:
       type: object
       properties:
@@ -10484,6 +10627,146 @@ components:
         - total_actual_profit
         - total_estimated_profit
         - total_profit
+    JobProfitabilityItem:
+      type: object
+      description: Per-job profitability data.
+      properties:
+        job_id:
+          type: string
+          description: Job UUID
+        job_number:
+          type: integer
+          description: Job number
+        job_name:
+          type: string
+          description: Job description
+        client_name:
+          type: string
+          description: Client name
+        pricing_type:
+          type: string
+          description: Pricing methodology key
+        pricing_type_display:
+          type: string
+          description: Pricing methodology label
+        completion_date:
+          type: string
+          nullable: true
+          description: Date job was completed (ISO format)
+        job_value:
+          type: string
+          description: Total job value
+        estimate:
+          allOf:
+            - $ref: '#/components/schemas/CostSetMetrics'
+          description: Estimate cost set metrics
+        quote:
+          allOf:
+            - $ref: '#/components/schemas/CostSetMetrics'
+          description: Quote cost set metrics
+        actual:
+          allOf:
+            - $ref: '#/components/schemas/CostSetMetrics'
+          description: Actual cost set metrics
+        profit_variance:
+          type: string
+          description: Actual profit minus baseline profit (quote for FP, estimate
+            for T&M)
+        profit_variance_pct:
+          type: string
+          description: Variance as % of baseline
+      required:
+        - actual
+        - client_name
+        - completion_date
+        - estimate
+        - job_id
+        - job_name
+        - job_number
+        - job_value
+        - pricing_type
+        - pricing_type_display
+        - profit_variance
+        - profit_variance_pct
+        - quote
+    JobProfitabilityReportResponse:
+      type: object
+      description: Top-level response for the job profitability report.
+      properties:
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobProfitabilityItem'
+          description: List of job profitability rows
+        summary:
+          allOf:
+            - $ref: '#/components/schemas/JobProfitabilitySummary'
+          description: Aggregate summary statistics
+        filters_applied:
+          allOf:
+            - $ref: '#/components/schemas/FiltersApplied'
+          description: Echo of applied filters
+      required:
+        - filters_applied
+        - jobs
+        - summary
+    JobProfitabilitySummary:
+      type: object
+      description: Aggregate profitability statistics.
+      properties:
+        total_jobs:
+          type: integer
+          description: Total number of jobs in report
+        total_revenue:
+          type: string
+          description: Sum of actual revenue
+        total_cost:
+          type: string
+          description: Sum of actual cost
+        total_profit:
+          type: string
+          description: Sum of actual profit
+        overall_margin:
+          type: string
+          description: Overall profit margin %
+        avg_profit_per_job:
+          type: string
+          description: Average profit per job
+        total_baseline_profit:
+          type: string
+          description: Sum of baseline profit (quote for FP, estimate for T&M)
+        total_actual_profit:
+          type: string
+          description: Sum of actual profit
+        total_variance:
+          type: string
+          description: Total profit variance
+        tm_jobs:
+          type: integer
+          description: Number of T&M jobs
+        fp_jobs:
+          type: integer
+          description: Number of fixed price jobs
+        profitable_jobs:
+          type: integer
+          description: Jobs with positive profit
+        unprofitable_jobs:
+          type: integer
+          description: Jobs with zero or negative profit
+      required:
+        - avg_profit_per_job
+        - fp_jobs
+        - overall_margin
+        - profitable_jobs
+        - tm_jobs
+        - total_actual_profit
+        - total_baseline_profit
+        - total_cost
+        - total_jobs
+        - total_profit
+        - total_revenue
+        - total_variance
+        - unprofitable_jobs
     JobQuoteAcceptance:
       type: object
       description: Serializer for job quote acceptance data.
@@ -11859,6 +12142,15 @@ components:
           minimum: -10000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        annual_leave_loading:
+          type: number
+          format: double
+          maximum: 1000
+          minimum: -1000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Percentage added to base_wage_rate to get costing wage_rate
+            (8.00 = 8%)
         starting_job_number:
           type: integer
           maximum: 2147483647
@@ -12208,13 +12500,15 @@ components:
           type: string
           nullable: true
           maxLength: 30
-        wage_rate:
+        base_wage_rate:
           type: number
           format: double
           maximum: 100000000
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+          description: Actual hourly pay rate. wage_rate is auto-computed with leave
+            loading.
         xero_user_id:
           type: string
           nullable: true
@@ -12507,7 +12801,7 @@ components:
           type: number
           format: double
           maximum: 100
-          minimum: 0.1
+          minimum: 0.0
           exclusiveMaximum: true
     PayRunListItem:
       type: object
@@ -13085,6 +13379,13 @@ components:
         - client
         - job_number
         - name
+    PurchaseOrderLastNumberResponse:
+      type: object
+      description: Serializer for last purchase order number response.
+      properties:
+        last_po_number:
+          type: string
+          nullable: true
     PurchaseOrderLine:
       type: object
       description: Serializer for PurchaseOrderLine model.
@@ -13979,6 +14280,15 @@ components:
           type: string
           nullable: true
           maxLength: 30
+        base_wage_rate:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          description: Actual hourly pay rate. wage_rate is auto-computed with leave
+            loading.
         wage_rate:
           type: number
           format: double
@@ -13986,6 +14296,7 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+          readOnly: true
         xero_user_id:
           type: string
           nullable: true
@@ -14102,6 +14413,7 @@ components:
         - last_login
         - last_name
         - updated_at
+        - wage_rate
     StaffCreateRequest:
       type: object
       description: Base serializer for Staff model with shared logic for create and
@@ -14124,13 +14436,15 @@ components:
           type: string
           nullable: true
           maxLength: 30
-        wage_rate:
+        base_wage_rate:
           type: number
           format: double
           maximum: 100000000
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+          description: Actual hourly pay rate. wage_rate is auto-computed with leave
+            loading.
         xero_user_id:
           type: string
           nullable: true
@@ -14518,13 +14832,15 @@ components:
           type: string
           nullable: true
           maxLength: 30
-        wage_rate:
+        base_wage_rate:
           type: number
           format: double
           maximum: 100000000
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+          description: Actual hourly pay rate. wage_rate is auto-computed with leave
+            loading.
         xero_user_id:
           type: string
           nullable: true
@@ -15742,6 +16058,13 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        weekly_base_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - billable_percentage
         - name
@@ -15757,6 +16080,7 @@ components:
         - total_scheduled_hours
         - total_sick_leave_hours
         - total_unbilled_hours
+        - weekly_base_cost
         - weekly_cost
         - weekly_hours
     WeeklyStaffDataWeeklyHours:
@@ -15850,11 +16174,19 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        daily_base_cost:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
       required:
         - annual_leave_hours
         - bereavement_leave_hours
         - billable_hours
         - billed_hours
+        - daily_base_cost
         - daily_cost
         - day
         - hours
@@ -16087,7 +16419,7 @@ components:
           type: number
           format: double
           maximum: 100
-          minimum: 0.1
+          minimum: 0.0
           exclusiveMaximum: true
           default: 1.00
       required:
