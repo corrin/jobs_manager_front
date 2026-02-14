@@ -48,6 +48,21 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     }
   }
 
+  async function fetchLastPoNumber(): Promise<string | null> {
+    try {
+      const response = await api.getLastPurchaseOrderNumber()
+      const apiValue = response?.last_po_number ?? null
+      if (apiValue) {
+        debugLog('Fetched last PO number from endpoint:', apiValue)
+        return String(apiValue)
+      }
+    } catch (err) {
+      debugLog('Last PO number endpoint unavailable, falling back to list data', err)
+    }
+
+    return null
+  }
+
   async function fetchOne(id: string) {
     if (!id) {
       throw new Error('Purchase order ID is required')
@@ -161,5 +176,6 @@ export const usePurchaseOrderStore = defineStore('purchaseOrders', () => {
     fetchPurchaseOrderPdf,
     emailPurchaseOrder,
     reloadPoOnConflict,
+    fetchLastPoNumber,
   }
 })

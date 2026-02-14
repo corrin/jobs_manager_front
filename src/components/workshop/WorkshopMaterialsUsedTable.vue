@@ -30,10 +30,12 @@ import { toast } from 'vue-sonner'
 import { Trash2, Wrench } from 'lucide-vue-next'
 import { computed, onMounted, ref, watch } from 'vue'
 import { schemas } from '@/api/generated/api'
+import { api } from '@/api/client'
 import type { z } from 'zod'
-import { roundToDecimalPlaces } from '@/utils/number'
+import { normalizeOptionalDecimal, roundToDecimalPlaces } from '@/utils/number'
 
 type CostLine = z.infer<typeof schemas.CostLine>
+type StockConsumeRequest = z.infer<typeof schemas.StockConsumeRequest>
 
 const props = defineProps<{
   jobId: string
@@ -63,15 +65,6 @@ const draftKind = ref<'material' | 'adjust'>('material')
 const isAdjustDraft = computed(() => draftKind.value === 'adjust')
 const showAdjustDialog = ref(false)
 const adjustUnitRev = ref<number | null>(null)
-
-function isStockExtRefs(extRefs: unknown): extRefs is { stock_id: string } {
-  return (
-    typeof extRefs === 'object' &&
-    extRefs !== null &&
-    'stock_id' in extRefs &&
-    typeof (extRefs as Record<string, unknown>).stock_id === 'string'
-  )
-}
 
 function isDeliveryReceiptLine(line: CostLine): boolean {
   const meta = line.meta as Record<string, unknown> | undefined
@@ -153,22 +146,27 @@ async function createFromDraft(selectedStockId: string) {
             2,
           )
 
-    const now = new Date().toISOString()
     const description =
       draft.value.desc?.trim() || stock.description?.trim() || stock.item_code || 'Material'
 
-    const created = await costlineService.createCostLine(props.jobId, 'actual', {
-      kind: 'material',
-      desc: description,
+    const normalizedUnitCost = normalizeOptionalDecimal(unitCost, { decimalPlaces: 2 })
+    const normalizedUnitRev = normalizeOptionalDecimal(unitRev, { decimalPlaces: 2 })
+
+    const request: StockConsumeRequest = {
+      job_id: props.jobId,
       quantity,
-      unit_cost: unitCost,
-      unit_rev: unitRev,
-      accounting_date: now.split('T')[0],
-      ext_refs: { stock_id: selectedStockId },
-      meta: { source: 'workshop_materials' },
-      created_at: now,
-      updated_at: now,
+      ...(normalizedUnitCost !== undefined ? { unit_cost: normalizedUnitCost } : {}),
+      ...(normalizedUnitRev !== undefined ? { unit_rev: normalizedUnitRev } : {}),
+    }
+
+    const response = await api.consumeStock(request, {
+      params: { id: selectedStockId },
     })
+
+    const created = response.line
+    if (created && !created.desc && description) {
+      created.desc = description
+    }
 
     workshopLines.value = [...workshopLines.value, created].filter(isWorkshopLine)
 
@@ -267,19 +265,20 @@ async function deleteLine(line: CostLine) {
   }
 }
 
-function stockIdForLine(line: CostLine): string | null {
-  return isStockExtRefs(line.ext_refs) ? line.ext_refs.stock_id : null
-}
-
 function matchedStockForLine(line: CostLine) {
   if (isAdjustLine(line)) return null
-  const stockId = stockIdForLine(line)
-  if (stockId) return stockStore.items.find((i) => i.id === stockId) ?? null
 
-  // Delivery receipt lines may not have a stock_id; best-effort match by description.
+  // Best-effort match by description or item code.
   const desc = (line.desc ?? '').trim()
   if (!desc) return null
-  return stockStore.items.find((i) => (i.description ?? '').trim() === desc) ?? null
+  const normalized = desc.toLowerCase()
+  return (
+    stockStore.items.find(
+      (i) =>
+        (i.description ?? '').trim().toLowerCase() === normalized ||
+        (i.item_code ?? '').trim().toLowerCase() === normalized,
+    ) ?? null
+  )
 }
 
 function itemCodeForLine(line: CostLine): string | null {

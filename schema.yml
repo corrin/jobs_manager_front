@@ -5917,19 +5917,7 @@ paths:
           description: ''
     post:
       operationId: purchasing_rest_stock_create
-      description: |-
-        ViewSet for Stock CRUD operations.
-
-        Endpoints:
-        - GET    /purchasing/rest/stock/              - list all active stock
-        - POST   /purchasing/rest/stock/              - create stock item
-        - GET    /purchasing/rest/stock/<id>/         - retrieve stock item
-        - PUT    /purchasing/rest/stock/<id>/         - full update
-        - PATCH  /purchasing/rest/stock/<id>/         - partial update
-        - DELETE /purchasing/rest/stock/<id>/         - soft delete (sets is_active=False)
-
-        Custom Actions:
-        - POST   /purchasing/rest/stock/<id>/consume/ - consume stock for a job
+      description: Create or update stock by item_code.
       tags:
         - purchasing
       requestBody:
@@ -6624,7 +6612,7 @@ paths:
     get:
       operationId: timesheets_api_weekly_retrieve
       description: Return weekly timesheet data with payroll fields (5/7 days).
-      summary: Weekly overview with payroll data (Mon–Sun/Mon–Fri)
+      summary: Weekly overview with payroll data (Mon�Sun/Mon�Fri)
       parameters:
         - in: query
           name: start_date
@@ -7369,10 +7357,10 @@ components:
           type: string
           nullable: true
           description: Invalid staff UUID
-        stock_id:
+        stock_movement_id:
           type: string
           nullable: true
-          description: Invalid stock UUID
+          description: Invalid stock movement UUID
         purchase_order_line_id:
           type: string
           nullable: true

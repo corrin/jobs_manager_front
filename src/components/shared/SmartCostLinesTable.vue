@@ -310,8 +310,43 @@ function isDeliveryReceipt(line: CostLine): boolean {
   return !!(line?.meta && (line.meta as Record<string, string>).source === 'delivery_receipt')
 }
 
+function getLegacyStockId(extRefs: unknown): string | null {
+  if (!extRefs || typeof extRefs !== 'object') return null
+  const legacyId = (extRefs as Record<string, unknown>).stock_id
+  return typeof legacyId === 'string' ? legacyId : null
+}
+
+function getStockMovementId(extRefs: unknown): string | null {
+  if (!extRefs || typeof extRefs !== 'object') return null
+  const movementId = (extRefs as Record<string, unknown>).stock_movement_id
+  return typeof movementId === 'string' ? movementId : null
+}
+
+function resolveStockItemForLine(line: CostLine) {
+  const legacyStockId = getLegacyStockId(line.ext_refs)
+  if (legacyStockId) {
+    return store.items.find((item) => item.id === legacyStockId) ?? null
+  }
+
+  const desc = (line.desc ?? '').trim()
+  if (!desc) return null
+  const normalized = desc.toLowerCase()
+  return (
+    store.items.find(
+      (item) =>
+        (item.description ?? '').trim().toLowerCase() === normalized ||
+        (item.item_code ?? '').trim().toLowerCase() === normalized,
+    ) ?? null
+  )
+}
+
+function resolveStockIdForLine(line: CostLine): string | null {
+  return resolveStockItemForLine(line)?.id ?? null
+}
+
 function isStockLine(line: CostLine): boolean {
-  return !!(line?.ext_refs && (line.ext_refs as Record<string, unknown>).stock_id)
+  if (!line?.ext_refs) return false
+  return Boolean(getStockMovementId(line.ext_refs) || getLegacyStockId(line.ext_refs))
 }
 
 function isUnapproved(line: CostLine): boolean {
@@ -320,7 +355,7 @@ function isUnapproved(line: CostLine): boolean {
 
 function isNegativeStock(line: CostLine): boolean {
   if (!line?.id || !isStockLine(line)) return false
-  const stockId = (line.ext_refs as Record<string, unknown>)?.stock_id
+  const stockId = resolveStockIdForLine(line)
   console.log(
     'DEBUG: isNegativeStock - stockId:',
     stockId,
@@ -350,8 +385,7 @@ function canEditField(
   if (field === 'quantity' && props.tabKind === 'actual') {
     // For actuals, quantity on non-adjust lines typically should not be edited (origin = system)
     const isMaterial = kind === 'material'
-    const isConsumed =
-      !!line.id || !!(line.ext_refs && (line.ext_refs as Record<string, unknown>).stock_id)
+    const isConsumed = !!line.id || !!(line.ext_refs && getStockMovementId(line.ext_refs))
     return kind === 'adjust' || (isMaterial && isConsumed)
   }
   if (field === 'desc' && props.tabKind === 'actual') {
@@ -519,10 +553,7 @@ const columns = computed(() => {
           cell: ({ row }: RowCtx) => {
             const line = displayLines.value[row.index]
             const selectedItem = selectedItemMap.get(line)
-            const model =
-              selectedItem?.id ||
-              ((line.ext_refs as Record<string, unknown>)?.stock_id as string) ||
-              null
+            const model = selectedItem?.id || getLegacyStockId(line.ext_refs) || null
             const kind = String(line.kind)
             const isMaterial = kind === 'material'
             const isNewLine = !line.id
@@ -562,30 +593,16 @@ const columns = computed(() => {
                     },
                     () => {
                       if (!model) {
-                        // Check if this is a time line without stock_id (labour)
-                        const stockId = (line.ext_refs as Record<string, unknown>)
-                          ?.stock_id as string
-                        if (!stockId && String(line.kind) === 'time') {
+                        // Check if this is a time line without stock selection (labour)
+                        const legacyStockId = getLegacyStockId(line.ext_refs)
+                        if (!legacyStockId && String(line.kind) === 'time') {
                           return 'LABOUR'
                         }
 
                         // Check if this is an existing line with stock selected
-                        if (stockId) {
-                          // Try to find the item in the stock store by ID
-                          const stockItem = store.items.find((item) => item.id === stockId)
-                          if (stockItem?.item_code) {
-                            return stockItem.item_code
-                          }
-                        }
-
-                        // If no stock_id or item not found by ID, try to find by description
-                        if (line.desc) {
-                          const stockItemByDesc = store.items.find(
-                            (item) => item.description?.toLowerCase() === line.desc?.toLowerCase(),
-                          )
-                          if (stockItemByDesc?.item_code) {
-                            return stockItemByDesc.item_code
-                          }
+                        const resolvedItem = resolveStockItemForLine(line)
+                        if (resolvedItem?.item_code) {
+                          return resolvedItem.item_code
                         }
 
                         // If no valid item found, prompt user to select a valid item
@@ -602,7 +619,7 @@ const columns = computed(() => {
                         return selectedItem.item_code
                       }
 
-                      // If no selectedItem but we have a model (stock_id), find the item in store
+                      // If no selectedItem but we have a model (legacy stock_id), find the item in store
                       if (model && model !== '__labour__') {
                         const stockItem = store.items.find((item) => item.id === model)
                         if (stockItem?.item_code) {
@@ -714,10 +731,6 @@ const columns = computed(() => {
                       })
                       Object.assign(line, { desc: found.description || '' })
                       Object.assign(line, { unit_cost: Number(found.unit_cost ?? 0) })
-                      // Update ext_refs.stock_id to reference the selected item
-                      Object.assign(line, {
-                        ext_refs: { ...((line.ext_refs as object) || {}), stock_id: val },
-                      })
                       // Update selectedItemMap with full data
                       selectedItemMap.set(line, {
                         id: val as string,
@@ -752,7 +765,6 @@ const columns = computed(() => {
                         desc: line.desc || '',
                         unit_cost: Number(line.unit_cost ?? 0),
                         unit_rev: Number(line.unit_rev ?? 0),
-                        ext_refs: { stock_id: val },
                       }
                       const optimistic: Partial<CostLine> = { ...patch }
                       autosave.scheduleSave(line, patch, optimistic)

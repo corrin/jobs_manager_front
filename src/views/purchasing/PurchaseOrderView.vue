@@ -56,6 +56,7 @@
               :key="po.id"
               class="border-b hover:bg-slate-50"
               :class="{ 'opacity-60 bg-red-50': isPoDeleted(normalizeStatus(po.status)) }"
+              :data-automation-id="`PurchaseOrderView-row-${po.id}`"
             >
               <td class="p-3">
                 <a
@@ -72,8 +73,11 @@
                 {{ po.created_by_name || '—' }}
               </td>
               <td class="p-3">
-                <span :class="getStatusClass(normalizeStatus(po.status))">
-                  {{ formatStatus(normalizeStatus(po.status)) }}
+                <span
+                  :class="getStatusClass(normalizeStatus(po.status), po.isLocalDraft)"
+                  :data-automation-id="`PurchaseOrderView-status-${po.id}`"
+                >
+                  {{ formatStatus(normalizeStatus(po.status), po.isLocalDraft) }}
                 </span>
               </td>
               <td class="p-3 flex justify-center gap-2">
@@ -122,37 +126,70 @@ import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { FileText, Pencil, Trash2, PlusCircle, FileSpreadsheet, Search } from 'lucide-vue-next'
 import { usePurchaseOrderStore } from '@/stores/purchaseOrderStore'
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch, onActivated, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import Pagination from '@/components/ui/pagination/Pagination.vue'
 import { toast } from 'vue-sonner'
 import { schemas } from '@/api/generated/api'
+import { listPoDrafts, deletePoDraft } from '@/composables/usePoDrafts'
+import type { z } from 'zod'
 
-const statusOptions = schemas.PurchaseOrderDetailStatusEnum.options
-type PurchaseOrderStatus = (typeof statusOptions)[number]
+type BackendPurchaseOrderStatus = z.infer<typeof schemas.PurchaseOrderDetailStatusEnum>
+type UiPurchaseOrderStatus = BackendPurchaseOrderStatus | 'local_draft'
+type PurchaseOrderList = z.infer<typeof schemas.PurchaseOrderList>
+type PurchaseOrderRow = PurchaseOrderList & { isLocalDraft?: boolean }
 
 const router = useRouter()
 const store = usePurchaseOrderStore()
 const orders = computed(() => store.orders)
+const drafts = ref(listPoDrafts())
+
+const refreshDrafts = () => {
+  drafts.value = listPoDrafts()
+  debugLog('PO list: refreshed local drafts', { count: drafts.value.length })
+}
+const combinedOrders = computed<PurchaseOrderRow[]>(() => {
+  const mappedDrafts: PurchaseOrderRow[] = drafts.value.map((draft) => ({
+    id: `draft-${draft.draftId}`,
+    po_number: draft.po_number || draft.reference || draft.label || 'Local Draft',
+    status: 'draft',
+    order_date: draft.order_date || new Date().toISOString(),
+    supplier: draft.supplier || 'Local draft',
+    supplier_id: draft.supplier_id ?? null,
+    created_by_id: null,
+    created_by_name: 'Local Draft',
+    jobs: [],
+    isLocalDraft: true,
+  }))
+  return [...mappedDrafts, ...orders.value]
+})
 
 const page = ref(1)
 const pageSize = 11
 const searchTerm = ref('')
 
-const normalizeStatus = (status?: string): PurchaseOrderStatus => {
-  if (status && statusOptions.includes(status as PurchaseOrderStatus)) {
-    return status as PurchaseOrderStatus
+const onStorage = (event: StorageEvent) => {
+  if (event.key === 'po-drafts') {
+    refreshDrafts()
+  }
+}
+
+const normalizeStatus = (status?: string): UiPurchaseOrderStatus => {
+  if (status === 'local_draft') return 'local_draft'
+  const options = schemas.PurchaseOrderDetailStatusEnum.options
+  if (status && options.includes(status as BackendPurchaseOrderStatus)) {
+    return status as BackendPurchaseOrderStatus
   }
   return 'draft'
 }
 
 const filteredOrders = computed(() => {
   if (!searchTerm.value.trim()) {
-    return orders.value
+    return combinedOrders.value
   }
 
   const term = searchTerm.value.toLowerCase()
-  return orders.value.filter((po) => {
+  return combinedOrders.value.filter((po) => {
     const statusValue = normalizeStatus(po.status)
     const jobsMatch = po.jobs?.some((job) => job.job_number.toLowerCase().includes(term))
     return (
@@ -174,6 +211,7 @@ const pagedOrders = computed(() => {
 watch(
   () => orders.value.length,
   () => {
+    refreshDrafts()
     if (page.value > totalPages.value) page.value = 1
   },
 )
@@ -182,7 +220,7 @@ watch(searchTerm, () => {
   page.value = 1
 })
 
-const statusLabels: Record<PurchaseOrderStatus, string> = {
+const statusLabels: Record<BackendPurchaseOrderStatus, string> = {
   draft: 'Draft',
   submitted: 'Submitted to Supplier',
   partially_received: 'Partially Received',
@@ -190,7 +228,7 @@ const statusLabels: Record<PurchaseOrderStatus, string> = {
   deleted: 'Deleted',
 }
 
-const statusClasses: Record<PurchaseOrderStatus, string> = {
+const statusClasses: Record<BackendPurchaseOrderStatus, string> = {
   draft: 'px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800',
   submitted: 'px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800',
   partially_received: 'px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800',
@@ -198,9 +236,13 @@ const statusClasses: Record<PurchaseOrderStatus, string> = {
   deleted: 'px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800',
 }
 
-const formatStatus = (status: PurchaseOrderStatus) => statusLabels[status] ?? status
+const formatStatus = (status: UiPurchaseOrderStatus, isLocalDraft?: boolean) =>
+  isLocalDraft ? 'Local Draft' : (statusLabels[status as BackendPurchaseOrderStatus] ?? status)
 
-const getStatusClass = (status: PurchaseOrderStatus) => statusClasses[status] ?? statusClasses.draft
+const getStatusClass = (status: UiPurchaseOrderStatus, isLocalDraft?: boolean) =>
+  isLocalDraft
+    ? 'px-2 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-800'
+    : (statusClasses[status as BackendPurchaseOrderStatus] ?? statusClasses.draft)
 
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-NZ', {
@@ -219,11 +261,30 @@ const formatJobs = (jobs: PurchaseOrderJob[]) => {
   return `${jobs[0].job_number} +${jobs.length - 1} others`
 }
 
-const openRow = (id: string) => router.push(`/purchasing/po/${id}`)
-const goToCreate = () => router.push('/purchasing/po/create')
+const openRow = (id: string) => {
+  if (id.startsWith('draft-')) {
+    openDraft(id.replace('draft-', ''))
+    return
+  }
+  router.push(`/purchasing/po/${id}`)
+}
+const goToCreate = () => router.push('/purchasing/po/new')
 const createFromQuote = () => router.push('/purchasing/po/create-from-quote')
+const openDraft = (id: string) =>
+  router.push({ path: '/purchasing/po/new', query: { draft: id } }).then(() => refreshDrafts())
+
+const deleteDraft = (id: string) => {
+  deletePoDraft(id)
+  refreshDrafts()
+  toast.success('Draft removed')
+}
 
 const deletePo = async (id: string) => {
+  if (id.startsWith('draft-')) {
+    deleteDraft(id.replace('draft-', ''))
+    return
+  }
+
   const purchaseOrder = orders.value.find((p) => p.id === id)
   const statusValue = normalizeStatus(purchaseOrder?.status)
 
@@ -250,9 +311,19 @@ const deletePo = async (id: string) => {
   }
 }
 
-const isPoDeleted = (status: PurchaseOrderStatus) => status === 'deleted'
+const isPoDeleted = (status: UiPurchaseOrderStatus) => status === 'deleted'
 
 onMounted(() => {
   store.fetchOrders()
+  refreshDrafts()
+  window.addEventListener('storage', onStorage)
+})
+
+onActivated(() => {
+  refreshDrafts()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('storage', onStorage)
 })
 </script>

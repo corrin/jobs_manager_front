@@ -1256,7 +1256,7 @@ const BrokenJSONReference = z
     record_id: z.string(),
     field: z.string(),
     staff_id: z.string().nullish(),
-    stock_id: z.string().nullish(),
+    stock_movement_id: z.string().nullish(),
     purchase_order_line_id: z.string().nullish(),
     issue: z.string().nullish(),
   })
@@ -7242,18 +7242,7 @@ Custom Actions:
     method: 'post',
     path: '/purchasing/rest/stock/',
     alias: 'purchasing_rest_stock_create',
-    description: `ViewSet for Stock CRUD operations.
-
-Endpoints:
-- GET    /purchasing/rest/stock/              - list all active stock
-- POST   /purchasing/rest/stock/              - create stock item
-- GET    /purchasing/rest/stock/&lt;id&gt;/         - retrieve stock item
-- PUT    /purchasing/rest/stock/&lt;id&gt;/         - full update
-- PATCH  /purchasing/rest/stock/&lt;id&gt;/         - partial update
-- DELETE /purchasing/rest/stock/&lt;id&gt;/         - soft delete (sets is_active&#x3D;False)
-
-Custom Actions:
-- POST   /purchasing/rest/stock/&lt;id&gt;/consume/ - consume stock for a job`,
+    description: `Create or update stock by item_code.`,
     requestFormat: 'json',
     parameters: [
       {
