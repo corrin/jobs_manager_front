@@ -433,6 +433,9 @@ const createInvoice = async () => {
       return
     }
     toast.success('Invoice created successfully!')
+    if (response.messages?.length) {
+      response.messages.forEach((msg) => toast.warning(msg))
+    }
     emit('invoice-created')
     await loadInvoices() // Reload invoices after creation
   } catch (err: unknown) {
