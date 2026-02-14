@@ -522,6 +522,11 @@ import type {
   PeriodLength,
 } from '@/types/profit-loss.types'
 import { toLocalDateString } from '@/utils/dateUtils'
+import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
+import { useFinancialYear } from '@/composables/useFinancialYear'
+
+const companyDefaultsStore = useCompanyDefaultsStore()
+const { getDateRange: getFyDateRange } = useFinancialYear()
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -537,17 +542,6 @@ const comparison = ref({
   periods: 0,
   periodLength: 'month' as PeriodLength,
 })
-
-// Financial year starts April 1st (NZ standard)
-const getFinancialYearStart = (date: Date): Date => {
-  const year = date.getMonth() >= 3 ? date.getFullYear() : date.getFullYear() - 1
-  return new Date(year, 3, 1) // April 1st
-}
-
-const getFinancialYearEnd = (date: Date): Date => {
-  const year = date.getMonth() >= 3 ? date.getFullYear() + 1 : date.getFullYear()
-  return new Date(year, 2, 31) // March 31st
-}
 
 const summary = computed(() => {
   if (!reportData.value) return null
@@ -618,17 +612,12 @@ const setDateRange = (preset: PeriodPreset) => {
       )
       break
     case 'thisFinancialYear':
-      const fyStart = getFinancialYearStart(now)
-      const fyEnd = getFinancialYearEnd(now)
-      dateRange.value.startDate = toLocalDateString(fyStart)
-      dateRange.value.endDate = toLocalDateString(fyEnd)
+    case 'lastFinancialYear': {
+      const range = getFyDateRange(preset)
+      dateRange.value.startDate = range.startDate
+      dateRange.value.endDate = range.endDate
       break
-    case 'lastFinancialYear':
-      const lastFyStart = getFinancialYearStart(new Date(year - 1, month, 1))
-      const lastFyEnd = getFinancialYearEnd(new Date(year - 1, month, 1))
-      dateRange.value.startDate = toLocalDateString(lastFyStart)
-      dateRange.value.endDate = toLocalDateString(lastFyEnd)
-      break
+    }
     case 'monthToDate':
       dateRange.value.startDate = toLocalDateString(new Date(year, month, 1))
       dateRange.value.endDate = toLocalDateString(now)
@@ -777,7 +766,10 @@ const exportToCsv = () => {
   document.body.removeChild(link)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  if (!companyDefaultsStore.isLoaded) {
+    await companyDefaultsStore.loadCompanyDefaults()
+  }
   // Set default to this month
   setDateRange('thisMonth')
 })

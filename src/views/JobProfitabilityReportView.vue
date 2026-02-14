@@ -107,13 +107,39 @@
               <Button variant="outline" size="sm" @click="setDateRange('lastFinancialYear')">
                 Last Financial Year
               </Button>
-              <Button variant="outline" size="sm" @click="setDateRange('thisQuarter')">
-                This Quarter
+              <Button variant="outline" size="sm" @click="setDateRange('latest3Months')">
+                Latest 3 Months
               </Button>
-              <Button variant="outline" size="sm" @click="setDateRange('last6Months')">
-                Last 6 Months
+              <Button variant="outline" size="sm" @click="setDateRange('latestMonth')">
+                Latest Month
               </Button>
             </div>
+          </div>
+
+          <!-- View Mode Toggle -->
+          <div class="flex items-center gap-1 rounded-lg bg-gray-100 p-1 w-fit">
+            <button
+              class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
+              :class="
+                viewMode === 'profit'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-transparent text-gray-700 hover:text-gray-900'
+              "
+              @click="viewMode = 'profit'"
+            >
+              Profit
+            </button>
+            <button
+              class="px-4 py-1.5 text-sm font-medium rounded-md transition-colors"
+              :class="
+                viewMode === 'all'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'bg-transparent text-gray-700 hover:text-gray-900'
+              "
+              @click="viewMode = 'all'"
+            >
+              All Data
+            </button>
           </div>
 
           <!-- Summary Stats -->
@@ -122,82 +148,48 @@
             class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4"
           >
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Total Jobs</p>
-                  <p class="text-2xl font-bold text-gray-900">{{ summary.total_jobs }}</p>
-                </div>
-                <BarChart3 class="h-8 w-8 text-blue-500" />
-              </div>
+              <p class="text-sm font-medium text-gray-600">Total Jobs</p>
+              <p class="text-2xl font-bold text-gray-900">{{ summary.total_jobs }}</p>
             </div>
 
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Total Revenue</p>
-                  <p class="text-2xl font-bold text-gray-900">
-                    {{ formatCurrency(Number(summary.total_revenue)) }}
-                  </p>
-                </div>
-                <DollarSign class="h-8 w-8 text-green-500" />
-              </div>
+              <p class="text-sm font-medium text-gray-600">Total Revenue</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {{ formatCurrency(Number(summary.total_revenue)) }}
+              </p>
             </div>
 
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Total Profit</p>
-                  <p class="text-2xl font-bold text-gray-900">
-                    {{ formatCurrency(Number(summary.total_profit)) }}
-                  </p>
-                </div>
-                <TrendingUp class="h-8 w-8 text-purple-500" />
-              </div>
+              <p class="text-sm font-medium text-gray-600">Total Profit</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {{ formatCurrency(Number(summary.total_profit)) }}
+              </p>
             </div>
 
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Overall Margin</p>
-                  <p class="text-2xl font-bold text-gray-900">
-                    {{ Number(summary.overall_margin).toFixed(1) }}%
-                  </p>
-                </div>
-                <Percent class="h-8 w-8 text-orange-500" />
-              </div>
+              <p class="text-sm font-medium text-gray-600">Overall Margin</p>
+              <p class="text-2xl font-bold text-gray-900">
+                {{ Number(summary.overall_margin).toFixed(1) }}%
+              </p>
             </div>
 
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Profitable / Unprofitable</p>
-                  <p class="text-2xl font-bold text-gray-900">
-                    <span class="text-green-600">{{ summary.profitable_jobs }}</span>
-                    /
-                    <span class="text-red-600">{{ summary.unprofitable_jobs }}</span>
-                  </p>
-                </div>
-                <CheckCircle class="h-8 w-8 text-green-500" />
-              </div>
+              <p class="text-sm font-medium text-gray-600">Profitable / Unprofitable</p>
+              <p class="text-2xl font-bold text-gray-900">
+                <span class="text-green-600">{{ summary.profitable_jobs }}</span>
+                /
+                <span class="text-red-600">{{ summary.unprofitable_jobs }}</span>
+              </p>
             </div>
 
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-4">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-gray-600">Total Variance</p>
-                  <p
-                    class="text-2xl font-bold"
-                    :class="Number(summary.total_variance) >= 0 ? 'text-green-600' : 'text-red-600'"
-                  >
-                    {{ formatCurrency(Number(summary.total_variance)) }}
-                  </p>
-                </div>
-                <TrendingDown
-                  v-if="Number(summary.total_variance) < 0"
-                  class="h-8 w-8 text-red-500"
-                />
-                <TrendingUp v-else class="h-8 w-8 text-green-500" />
-              </div>
+              <p class="text-sm font-medium text-gray-600">Total Variance</p>
+              <p
+                class="text-2xl font-bold"
+                :class="Number(summary.total_variance) >= 0 ? 'text-green-600' : 'text-red-600'"
+              >
+                {{ formatCurrency(Number(summary.total_variance)) }}
+              </p>
             </div>
           </div>
 
@@ -271,60 +263,52 @@
                       </th>
                       <th
                         class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                        @click="handleSort('job_value')"
+                        @click="handleSort('revenue')"
                       >
                         <div class="flex items-center justify-end gap-1">
-                          Job Value
-                          <span v-if="sortColumn === 'job_value'" class="text-slate-500">
+                          Revenue
+                          <span v-if="sortColumn === 'revenue'" class="text-slate-500">
+                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                          </span>
+                        </div>
+                      </th>
+                      <th
+                        v-if="viewMode === 'all'"
+                        class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                        @click="handleSort('baseline_revenue')"
+                      >
+                        <div class="flex items-center justify-end gap-1">
+                          Expected Revenue
+                          <span v-if="sortColumn === 'baseline_revenue'" class="text-slate-500">
+                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
+                          </span>
+                        </div>
+                      </th>
+                      <th
+                        v-if="viewMode === 'all'"
+                        class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
+                        @click="handleSort('baseline_cost')"
+                      >
+                        <div class="flex items-center justify-end gap-1">
+                          Expected Cost
+                          <span v-if="sortColumn === 'baseline_cost'" class="text-slate-500">
                             {{ sortDirection === 'asc' ? '↑' : '↓' }}
                           </span>
                         </div>
                       </th>
                       <th
                         class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                        @click="handleSort('estimate_revenue')"
+                        @click="handleSort('baseline_profit')"
                       >
                         <div class="flex items-center justify-end gap-1">
-                          Est. Revenue
-                          <span v-if="sortColumn === 'estimate_revenue'" class="text-slate-500">
+                          Expected Profit
+                          <span v-if="sortColumn === 'baseline_profit'" class="text-slate-500">
                             {{ sortDirection === 'asc' ? '↑' : '↓' }}
                           </span>
                         </div>
                       </th>
                       <th
-                        class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                        @click="handleSort('estimate_cost')"
-                      >
-                        <div class="flex items-center justify-end gap-1">
-                          Est. Cost
-                          <span v-if="sortColumn === 'estimate_cost'" class="text-slate-500">
-                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                          </span>
-                        </div>
-                      </th>
-                      <th
-                        class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                        @click="handleSort('quote_revenue')"
-                      >
-                        <div class="flex items-center justify-end gap-1">
-                          Quote Revenue
-                          <span v-if="sortColumn === 'quote_revenue'" class="text-slate-500">
-                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                          </span>
-                        </div>
-                      </th>
-                      <th
-                        class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                        @click="handleSort('quote_cost')"
-                      >
-                        <div class="flex items-center justify-end gap-1">
-                          Quote Cost
-                          <span v-if="sortColumn === 'quote_cost'" class="text-slate-500">
-                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                          </span>
-                        </div>
-                      </th>
-                      <th
+                        v-if="viewMode === 'all'"
                         class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
                         @click="handleSort('actual_revenue')"
                       >
@@ -336,23 +320,13 @@
                         </div>
                       </th>
                       <th
+                        v-if="viewMode === 'all'"
                         class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
                         @click="handleSort('actual_cost')"
                       >
                         <div class="flex items-center justify-end gap-1">
                           Actual Cost
                           <span v-if="sortColumn === 'actual_cost'" class="text-slate-500">
-                            {{ sortDirection === 'asc' ? '↑' : '↓' }}
-                          </span>
-                        </div>
-                      </th>
-                      <th
-                        class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100"
-                        @click="handleSort('baseline_profit')"
-                      >
-                        <div class="flex items-center justify-end gap-1">
-                          Est. Profit
-                          <span v-if="sortColumn === 'baseline_profit'" class="text-slate-500">
                             {{ sortDirection === 'asc' ? '↑' : '↓' }}
                           </span>
                         </div>
@@ -405,7 +379,10 @@
                           {{ job.job_name }}
                         </div>
                       </td>
-                      <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td
+                        class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 max-w-[120px] truncate"
+                        :title="job.client_name"
+                      >
                         {{ job.client_name }}
                       </td>
                       <td class="px-4 py-4 whitespace-nowrap text-sm">
@@ -417,45 +394,57 @@
                               : 'bg-purple-100 text-purple-800'
                           "
                         >
-                          {{ job.pricing_type_display }}
+                          {{ job.pricing_type === 'time_materials' ? 'T&M' : 'Fixed' }}
                         </span>
                       </td>
                       <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                         {{ job.completion_date }}
                       </td>
                       <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {{ formatCurrency(Number(job.job_value)) }}
+                        {{ formatCurrency(Number(job.revenue)) }}
+                      </td>
+                      <td
+                        v-if="viewMode === 'all'"
+                        class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right"
+                      >
+                        {{ formatCurrency(Number(baseline(job).revenue)) }}
+                      </td>
+                      <td
+                        v-if="viewMode === 'all'"
+                        class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right"
+                      >
+                        {{ formatCurrency(Number(baseline(job).cost)) }}
                       </td>
                       <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {{ formatCurrency(Number(job.estimate.revenue)) }}
+                        {{ formatCurrency(Number(baseline(job).profit)) }}
                       </td>
-                      <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {{ formatCurrency(Number(job.estimate.cost)) }}
-                      </td>
-                      <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {{ formatCurrency(Number(job.quote.revenue)) }}
-                      </td>
-                      <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {{ formatCurrency(Number(job.quote.cost)) }}
-                      </td>
-                      <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                      <td
+                        v-if="viewMode === 'all'"
+                        class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right"
+                      >
                         {{ formatCurrency(Number(job.actual.revenue)) }}
                       </td>
-                      <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                      <td
+                        v-if="viewMode === 'all'"
+                        class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right"
+                      >
                         {{ formatCurrency(Number(job.actual.cost)) }}
-                      </td>
-                      <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                        {{ formatCurrency(Number(baselineProfit(job))) }}
                       </td>
                       <td
                         class="px-4 py-4 whitespace-nowrap text-sm font-medium text-right"
-                        :class="Number(job.actual.profit) >= 0 ? 'text-green-600' : 'text-red-600'"
+                        :class="
+                          Number(job.actual.profit) < 0
+                            ? 'text-red-600'
+                            : Number(job.actual.profit) >= Number(baseline(job).profit)
+                              ? 'text-green-600'
+                              : 'text-amber-600'
+                        "
                       >
                         {{ formatCurrency(Number(job.actual.profit)) }}
                       </td>
                       <td
                         class="px-4 py-4 whitespace-nowrap text-sm font-medium text-right"
-                        :class="Number(job.actual.margin) >= 0 ? 'text-green-600' : 'text-red-600'"
+                        :class="marginColorClass(Number(job.actual.margin))"
                       >
                         {{ Number(job.actual.margin).toFixed(1) }}%
                       </td>
@@ -491,23 +480,18 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import {
-  TrendingUp,
-  TrendingDown,
-  Download,
-  RefreshCw,
-  DollarSign,
-  BarChart3,
-  AlertCircle,
-  Percent,
-  CheckCircle,
-} from 'lucide-vue-next'
+import { TrendingUp, Download, RefreshCw, AlertCircle } from 'lucide-vue-next'
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import axios from '@/plugins/axios'
 import { formatCurrency, exportToCsv } from '@/utils/string-formatting'
 import { toLocalDateString } from '@/utils/dateUtils'
 import { toast } from 'vue-sonner'
+import { useCompanyDefaultsStore } from '@/stores/companyDefaults'
+import { useFinancialYear } from '@/composables/useFinancialYear'
+
+const companyDefaultsStore = useCompanyDefaultsStore()
+const { getDateRange: getFyDateRange } = useFinancialYear()
 
 interface ProfitabilityBreakdown {
   revenue: string
@@ -525,7 +509,7 @@ interface JobProfitability {
   pricing_type: string
   pricing_type_display: string
   completion_date: string
-  job_value: string
+  revenue: string
   estimate: ProfitabilityBreakdown
   quote: ProfitabilityBreakdown
   actual: ProfitabilityBreakdown
@@ -541,7 +525,6 @@ interface ProfitabilitySummary {
   overall_margin: string
   avg_profit_per_job: string
   total_baseline_profit: string
-  total_actual_profit: string
   total_variance: string
   tm_jobs: number
   fp_jobs: number
@@ -559,7 +542,7 @@ const filters = ref({
   endDate: '',
   minValue: null as number | null,
   maxValue: null as number | null,
-  pricingType: '',
+  pricingType: 'fixed_price',
 })
 
 type SortableColumn =
@@ -567,49 +550,53 @@ type SortableColumn =
   | 'client_name'
   | 'pricing_type'
   | 'completion_date'
-  | 'job_value'
-  | 'estimate_revenue'
-  | 'estimate_cost'
-  | 'quote_revenue'
-  | 'quote_cost'
+  | 'revenue'
+  | 'baseline_revenue'
+  | 'baseline_cost'
+  | 'baseline_profit'
   | 'actual_revenue'
   | 'actual_cost'
-  | 'baseline_profit'
   | 'actual_profit'
   | 'actual_margin'
   | 'profit_variance'
 
 const sortColumn = ref<SortableColumn | null>(null)
 const sortDirection = ref<'asc' | 'desc'>('asc')
+const viewMode = ref<'profit' | 'all'>('profit')
 
-/** For T&M jobs use estimate.profit, for Fixed Price use quote.profit */
-const baselineProfit = (job: JobProfitability): string =>
-  job.pricing_type === 'time_materials' ? job.estimate.profit : job.quote.profit
+const gpTarget = computed(() => companyDefaultsStore.companyDefaults?.job_gp_target_percentage ?? 0)
+
+const marginColorClass = (margin: number): string => {
+  if (margin <= 0) return 'text-red-600'
+  if (margin >= gpTarget.value) return 'text-green-600'
+  if (margin >= gpTarget.value - 2) return 'text-gray-900'
+  return 'text-amber-600'
+}
+
+/** For T&M jobs use estimate, for Fixed Price use quote */
+const baseline = (job: JobProfitability): ProfitabilityBreakdown =>
+  job.pricing_type === 'time_materials' ? job.estimate : job.quote
 
 const getSortValue = (job: JobProfitability, col: SortableColumn): string | number => {
   switch (col) {
+    case 'baseline_revenue':
+      return Number(baseline(job).revenue)
+    case 'baseline_cost':
+      return Number(baseline(job).cost)
     case 'baseline_profit':
-      return Number(baselineProfit(job))
+      return Number(baseline(job).profit)
+    case 'actual_revenue':
+      return Number(job.actual.revenue)
+    case 'actual_cost':
+      return Number(job.actual.cost)
     case 'actual_profit':
       return Number(job.actual.profit)
     case 'actual_margin':
       return Number(job.actual.margin)
     case 'job_number':
       return job.job_number
-    case 'job_value':
-      return Number(job.job_value)
-    case 'estimate_revenue':
-      return Number(job.estimate.revenue)
-    case 'estimate_cost':
-      return Number(job.estimate.cost)
-    case 'quote_revenue':
-      return Number(job.quote.revenue)
-    case 'quote_cost':
-      return Number(job.quote.cost)
-    case 'actual_revenue':
-      return Number(job.actual.revenue)
-    case 'actual_cost':
-      return Number(job.actual.cost)
+    case 'revenue':
+      return Number(job.revenue)
     case 'profit_variance':
       return Number(job.profit_variance)
     default:
@@ -643,43 +630,30 @@ const handleSort = (column: SortableColumn) => {
   }
 }
 
-const getFinancialYearStart = (date: Date): Date => {
-  const year = date.getFullYear()
-  const month = date.getMonth()
-  // NZ financial year starts July 1
-  return month >= 6 ? new Date(year, 6, 1) : new Date(year - 1, 6, 1)
-}
-
 const setDateRange = (
-  period: 'thisFinancialYear' | 'lastFinancialYear' | 'thisQuarter' | 'last6Months',
+  period: 'thisFinancialYear' | 'lastFinancialYear' | 'latest3Months' | 'latestMonth',
 ) => {
   const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth()
 
   switch (period) {
-    case 'thisFinancialYear': {
-      const fyStart = getFinancialYearStart(now)
-      filters.value.startDate = toLocalDateString(fyStart)
+    case 'thisFinancialYear':
+    case 'lastFinancialYear': {
+      const range = getFyDateRange(period)
+      filters.value.startDate = range.startDate
+      filters.value.endDate = range.endDate
+      break
+    }
+    case 'latest3Months': {
+      const start = new Date(now)
+      start.setMonth(start.getMonth() - 3)
+      filters.value.startDate = toLocalDateString(start)
       filters.value.endDate = toLocalDateString(now)
       break
     }
-    case 'lastFinancialYear': {
-      const thisFyStart = getFinancialYearStart(now)
-      const lastFyStart = new Date(thisFyStart.getFullYear() - 1, 6, 1)
-      const lastFyEnd = new Date(thisFyStart.getFullYear(), 5, 30)
-      filters.value.startDate = toLocalDateString(lastFyStart)
-      filters.value.endDate = toLocalDateString(lastFyEnd)
-      break
-    }
-    case 'thisQuarter': {
-      const quarterStart = Math.floor(month / 3) * 3
-      filters.value.startDate = toLocalDateString(new Date(year, quarterStart, 1))
-      filters.value.endDate = toLocalDateString(new Date(year, quarterStart + 3, 0))
-      break
-    }
-    case 'last6Months': {
-      filters.value.startDate = toLocalDateString(new Date(year, month - 6, 1))
+    case 'latestMonth': {
+      const start = new Date(now)
+      start.setMonth(start.getMonth() - 1)
+      filters.value.startDate = toLocalDateString(start)
       filters.value.endDate = toLocalDateString(now)
       break
     }
@@ -733,7 +707,7 @@ const exportReport = () => {
     'Client',
     'Pricing Type',
     'Completion Date',
-    'Job Value',
+    'Revenue',
     'Est. Revenue',
     'Est. Cost',
     'Est. Profit',
@@ -759,7 +733,7 @@ const exportReport = () => {
     job.client_name,
     job.pricing_type_display,
     job.completion_date,
-    job.job_value,
+    job.revenue,
     job.estimate.revenue,
     job.estimate.cost,
     job.estimate.profit,
@@ -783,7 +757,10 @@ const exportReport = () => {
   toast.success('Report exported successfully')
 }
 
-onMounted(() => {
-  setDateRange('thisFinancialYear')
+onMounted(async () => {
+  if (!companyDefaultsStore.isLoaded) {
+    await companyDefaultsStore.loadCompanyDefaults()
+  }
+  setDateRange('latestMonth')
 })
 </script>
