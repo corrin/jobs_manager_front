@@ -6,35 +6,6 @@
 
       <!-- Office Mode -->
       <div v-if="isOfficeMode" class="flex-shrink-0 p-3 sm:p-4 lg:p-6 pt-2 sm:pt-3 md:pt-1 lg:pt-6">
-        <div class="mb-2 md:mb-3 space-y-2">
-          <div
-            class="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 w-full"
-          >
-            <button
-              @click="showAdvancedSearchDialog = true"
-              class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded-md transition-all duration-200 flex items-center flex-shrink-0"
-            >
-              <Search class="mr-1.5 h-3.5 w-3.5" />
-              Advanced Search
-            </button>
-
-            <div class="w-full max-w-xs sm:max-w-md">
-              <div class="relative">
-                <Search
-                  class="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-grey-400"
-                />
-                <input
-                  v-model="searchQuery"
-                  type="text"
-                  placeholder="Search..."
-                  class="w-full pl-8 pr-3 py-2 text-sm border border-grey-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  @input="handleSearch"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div class="flex-1 flex flex-col px-2 sm:px-4 lg:px-6 py-1 md:py-2">
           <div class="mb-2 md:mb-3 w-full">
             <div v-if="isDesktop" class="flex justify-center px-2">
@@ -306,8 +277,8 @@
 import { ref, onUnmounted, onMounted, nextTick, watch, computed } from 'vue'
 import { useMediaQuery } from '@vueuse/core'
 import { toast } from 'vue-sonner'
-import { Search, Check, Loader2 } from 'lucide-vue-next'
-import { useRoute } from 'vue-router'
+import { Check, Loader2 } from 'lucide-vue-next'
+import { useRoute, useRouter } from 'vue-router'
 import KanbanColumn from '@/components/KanbanColumn.vue'
 import AppLayout from '@/components/AppLayout.vue'
 import StaffPanel from '@/components/StaffPanel.vue'
@@ -344,6 +315,7 @@ const jobsStore = useJobsStore()
 const { isWorkshopMode, isOfficeMode } = useBoardMode()
 const isDesktop = useMediaQuery('(min-width: 768px)')
 const route = useRoute()
+const router = useRouter()
 const mobileAssignStaffId = ref<string | null>(null)
 const mobileAssignStaffName = ref('')
 const isTapAssignActive = computed(() => !isDesktop.value && Boolean(mobileAssignStaffId.value))
@@ -406,7 +378,6 @@ onUnmounted(() => {
 
 const {
   isLoading,
-  searchQuery,
   advancedFilters,
   activeStaffFilters,
   selectedMobileStatus,
@@ -417,7 +388,6 @@ const {
   getJobsByStatus,
 
   loadJobs,
-  handleSearch,
   handleAdvancedSearch,
   clearFilters,
   loadMoreJobs,
@@ -625,6 +595,20 @@ const handleStaffUnassigned = async (payload: { staffId: string; jobId: string }
 }
 
 const showAdvancedSearchDialog = ref(false)
+
+watch(
+  () => route.query.advanced,
+  (val) => {
+    if (val === '1') {
+      showAdvancedSearchDialog.value = true
+      // Clear the query param so closing and reopening works
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { advanced: _advanced, ...rest } = route.query
+      router.replace({ path: '/kanban', query: rest })
+    }
+  },
+  { immediate: true },
+)
 
 const handleAdvancedSearchFromDialog = async (filters: AdvancedFilters) => {
   try {
