@@ -20,14 +20,7 @@ import { z } from 'zod'
 import { schemas } from '../api/generated/api'
 import type { KanbanColumn } from '@/constants/kanban-column'
 
-// Use generated Job type from Zodios API
-type Job = z.infer<typeof schemas.Job>
-
-// Job-like interface for status checking (supports both Job and partial job objects)
-interface JobWithStatus {
-  status?: string
-  status_key?: string
-}
+type KanbanJob = z.infer<typeof schemas.KanbanJob>
 
 export class KanbanCategorizationService {
   // Simplified column structure - no more sub-categories, per Cindy's requirements
@@ -142,10 +135,7 @@ export class KanbanCategorizationService {
     ]
   }
 
-  static getJobsForColumn(
-    jobs: (Job | JobWithStatus)[],
-    columnId: string,
-  ): (Job | JobWithStatus)[] {
+  static getJobsForColumn(jobs: KanbanJob[], columnId: string): KanbanJob[] {
     if (!this.COLUMN_STRUCTURE[columnId]) {
       return []
     }
@@ -179,10 +169,8 @@ export class KanbanCategorizationService {
     return hiddenStatuses.has(status)
   }
 
-  static getVisibleJobsForKanban(jobs: (Job | JobWithStatus)[]): (Job | JobWithStatus)[] {
-    return jobs.filter(
-      (job) => !this.isStatusHiddenFromKanban((job.status || job.status_key || '') as string),
-    )
+  static getVisibleJobsForKanban(jobs: KanbanJob[]): KanbanJob[] {
+    return jobs.filter((job) => !this.isStatusHiddenFromKanban(job.status || job.status_key))
   }
 
   static getDefaultStatusForColumn(columnId: string): string {
