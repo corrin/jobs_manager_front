@@ -11171,13 +11171,25 @@ components:
         profit:
           type: number
           format: double
+        labour_profit:
+          type: number
+          format: double
+        material_profit:
+          type: number
+          format: double
+        adjustment_profit:
+          type: number
+          format: double
       required:
+        - adjustment_profit
         - billable_hours
         - client_name
         - cost
         - job_id
         - job_name
         - job_number
+        - labour_profit
+        - material_profit
         - profit
         - revenue
     KPIMonthlyTotals:

@@ -18,6 +18,9 @@ const KPIJobBreakdown = z
     revenue: z.number(),
     cost: z.number(),
     profit: z.number(),
+    labour_profit: z.number(),
+    material_profit: z.number(),
+    adjustment_profit: z.number(),
   })
   .passthrough()
 const KPIDetails = z

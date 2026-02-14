@@ -116,22 +116,23 @@
                 <td class="py-1.5 px-2">
                   <button
                     @click="handleJobClick(job.job_id)"
+                    :title="`${job.job_name} — ${job.client_name}`"
                     class="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                   >
                     {{ job.job_number }}
                   </button>
                 </td>
                 <td class="py-1.5 px-2 text-right">
-                  {{ formatCurrency(job.labour_profit as number) }}
+                  {{ formatCurrency(job.labour_profit) }}
                 </td>
                 <td class="py-1.5 px-2 text-right">
-                  {{ formatCurrency(job.material_profit as number) }}
+                  {{ formatCurrency(job.material_profit) }}
                 </td>
                 <td class="py-1.5 px-2 text-right">
-                  {{ formatCurrency(job.adjustment_profit as number) }}
+                  {{ formatCurrency(job.adjustment_profit) }}
                 </td>
                 <td class="py-1.5 px-2 text-right font-medium">
-                  {{ formatCurrency(job.total_profit as number) }}
+                  {{ formatCurrency(job.profit) }}
                 </td>
               </tr>
             </tbody>
