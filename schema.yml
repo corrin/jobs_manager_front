@@ -13559,11 +13559,16 @@ components:
           type: string
           readOnly: true
           nullable: true
+        job_name:
+          type: string
+          readOnly: true
+          nullable: true
       required:
         - client_name
         - description
         - id
         - job_id
+        - job_name
         - job_number
         - quantity
     PurchaseOrderLineCreateRequest:
@@ -16064,6 +16069,13 @@ components:
           minimum: -100000000
           exclusiveMaximum: true
           exclusiveMinimum: true
+        total_overtime_hours:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
         total_overtime_1_5x_hours:
           type: number
           format: double
@@ -16125,6 +16137,7 @@ components:
         - total_hours
         - total_overtime_1_5x_hours
         - total_overtime_2x_hours
+        - total_overtime_hours
         - total_scheduled_hours
         - total_sick_leave_hours
         - total_unbilled_hours

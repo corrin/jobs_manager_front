@@ -273,7 +273,7 @@ const columns = computed<ColumnDef<PurchaseOrderLine>[]>(() => {
                   if (job) {
                     updateLine(context.row.index, {
                       job_id: job.id,
-                      job_number: job.job_number?.toString(),
+                      job_number: job.job_number,
                       job_name: job.name,
                       client_name: job.client_name,
                     })

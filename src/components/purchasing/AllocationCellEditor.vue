@@ -77,7 +77,7 @@ const enhancedJobs = computed(() => {
     displayName:
       job.id === props.stockHoldingJobId
         ? `📦 ${job.name} (Stock)`
-        : `${job.job_number || job.number} - ${job.name || job.description}`,
+        : `${job.job_number} - ${job.name}`,
   })) as (JobForPurchasing & { isStockHolding: boolean; displayName: string })[]
 })
 

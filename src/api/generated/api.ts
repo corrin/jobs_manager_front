@@ -2052,6 +2052,7 @@ const PurchaseOrderLine = z.object({
   job_id: z.string().uuid().nullable(),
   job_number: z.number().int().nullable(),
   client_name: z.string().nullable(),
+  job_name: z.string().nullable(),
 })
 const PurchaseOrderDetail = z.object({
   id: z.string().uuid(),
@@ -2462,6 +2463,7 @@ const WeeklyStaffData = z.object({
   status: z.string(),
   total_billed_hours: z.number().gt(-100000000).lt(100000000),
   total_unbilled_hours: z.number().gt(-100000000).lt(100000000),
+  total_overtime_hours: z.number().gt(-100000000).lt(100000000),
   total_overtime_1_5x_hours: z.number().gt(-100000000).lt(100000000),
   total_overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
   total_sick_leave_hours: z.number().gt(-100000000).lt(100000000),

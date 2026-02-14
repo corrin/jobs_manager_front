@@ -467,6 +467,9 @@ function addLine() {
     specifics: undefined,
     location: undefined,
     job_id: null,
+    job_number: null,
+    client_name: null,
+    job_name: null,
   }
 
   debugLog('Adding new line:', newLine)
