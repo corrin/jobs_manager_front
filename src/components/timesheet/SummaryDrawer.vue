@@ -32,7 +32,7 @@
                   <div class="min-w-0">
                     <p class="text-xs md:text-sm text-gray-600">Total Hours</p>
                     <p class="text-base md:text-lg font-semibold">
-                      {{ consolidatedSummary.totalHours.toFixed(1) }}h
+                      {{ formatHoursDisplay(consolidatedSummary.totalHours) }}h
                     </p>
                   </div>
                 </div>
@@ -128,8 +128,8 @@
                       <div class="flex justify-between text-sm">
                         <span class="text-gray-600">Hours Progress</span>
                         <span class="font-medium">
-                          {{ jobData.actualHours.toFixed(1) }}h /
-                          {{ jobData.estimatedHours.toFixed(1) }}h
+                          {{ formatHoursDisplay(jobData.actualHours) }}h /
+                          {{ formatHoursDisplay(jobData.estimatedHours) }}h
                         </span>
                       </div>
 
@@ -208,7 +208,7 @@ import { api } from '@/api/client'
 import type { TimesheetEntryWithMeta } from '@/constants/timesheet'
 import { debugLog } from '../../utils/debug'
 import { z } from 'zod'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, formatHoursDisplay } from '@/utils/string-formatting'
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type FullJob = z.infer<typeof schemas.Job>

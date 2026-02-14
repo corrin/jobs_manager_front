@@ -19,7 +19,7 @@ import type {
 import { customTheme } from '@/plugins/ag-grid'
 import { TimesheetEntryJobCellEditor } from '@/components/timesheet/TimesheetEntryJobCellEditor'
 import { TimesheetEntryRateCellEditor } from '@/components/timesheet/TimesheetEntryRateCellEditor'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, formatHoursDisplay } from '@/utils/string-formatting'
 import { toLocalDateString } from '@/utils/dateUtils'
 import { useTimesheetEntryCalculations } from '@/composables/useTimesheetEntryCalculations'
 import { type TimesheetEntryJobSelectionItem } from '@/constants/timesheet'
@@ -105,19 +105,50 @@ export function useTimesheetEntryGrid(
       field: 'hours',
       width: 80,
       editable: true,
-      cellEditor: 'agNumberCellEditor',
-      cellEditorParams: {
-        min: 0,
-        max: 24,
-        step: 0.25,
-        precision: 2,
+      cellEditor: 'agTextCellEditor',
+      valueParser: (params) => {
+        const raw = String(params.newValue ?? '').trim()
+        if (!raw) return params.oldValue
+
+        let parsed: number
+
+        // Mixed number: "1 1/4", "2 3/4"
+        const mixedMatch = raw.match(/^(\d+)\s+(\d+)\/(\d+)$/)
+        if (mixedMatch) {
+          const whole = parseInt(mixedMatch[1], 10)
+          const num = parseInt(mixedMatch[2], 10)
+          const den = parseInt(mixedMatch[3], 10)
+          if (den === 0) return params.oldValue
+          parsed = whole + num / den
+        }
+        // Simple fraction: "1/4", "3/4"
+        else {
+          const fracMatch = raw.match(/^(\d+)\/(\d+)$/)
+          if (fracMatch) {
+            const num = parseInt(fracMatch[1], 10)
+            const den = parseInt(fracMatch[2], 10)
+            if (den === 0) return params.oldValue
+            parsed = num / den
+          } else {
+            parsed = parseFloat(raw)
+          }
+        }
+
+        if (!Number.isFinite(parsed) || parsed < 0) return params.oldValue
+        return Math.round(Math.min(parsed, 24) * 100) / 100
+      },
+      valueSetter: (params) => {
+        const val = params.newValue
+        if (typeof val !== 'number' || !Number.isFinite(val) || val < 0 || val > 24) return false
+        params.data.hours = val
+        return true
       },
       cellRenderer: (params: AgICellRendererParams) => {
         const hours = params.value || 0
         const isOvertime = hours > 8
         const color = isOvertime ? '#DC2626' : '#374151'
         const weight = isOvertime ? '600' : '400'
-        return `<span style="color: ${color}; font-weight: ${weight};">${hours.toFixed(2)}h</span>`
+        return `<span style="color: ${color}; font-weight: ${weight};">${formatHoursDisplay(hours)}h</span>`
       },
       cellClass: 'text-right',
     },

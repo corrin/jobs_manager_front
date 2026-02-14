@@ -1,6 +1,11 @@
 import api from '@/plugins/axios'
 import { debugLog } from '@/utils/debug'
-import { formatCurrency, toCsvString, downloadCsv } from '@/utils/string-formatting'
+import {
+  formatCurrency,
+  formatHoursDisplay,
+  toCsvString,
+  downloadCsv,
+} from '@/utils/string-formatting'
 import { toLocalDateString } from '@/utils/dateUtils'
 import type {
   StaffPerformanceReportResponse,
@@ -127,7 +132,7 @@ export class StaffPerformanceReportService {
   }
 
   formatHours(hours: number): string {
-    return `${hours.toFixed(1)}h`
+    return `${formatHoursDisplay(hours)}h`
   }
 
   formatPercentage(percentage: number): string {

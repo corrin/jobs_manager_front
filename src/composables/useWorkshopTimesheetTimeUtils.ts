@@ -53,6 +53,6 @@ export function calculateDurationHours(startTime: string, endTime: string): numb
 
 export function formatHoursValue(hours: number): string {
   const safe = Number.isFinite(hours) ? hours : 0
-  const rounded = Math.round(safe * 10) / 10
-  return rounded.toFixed(1)
+  const rounded = Math.round(safe * 100) / 100
+  return parseFloat(rounded.toFixed(2)).toString()
 }

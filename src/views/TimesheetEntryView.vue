@@ -63,7 +63,7 @@
             </div>
 
             <div class="text-xs text-gray-700">
-              <span class="font-semibold">{{ todayStats.totalHours.toFixed(1) }}h</span>
+              <span class="font-semibold">{{ formatHoursDisplay(todayStats.totalHours) }}h</span>
             </div>
           </div>
 
@@ -240,7 +240,8 @@
 
           <div class="flex items-center space-x-2 ml-auto">
             <div class="text-xs text-gray-700 mr-4">
-              <span class="font-semibold">{{ todayStats.totalHours.toFixed(1) }}h</span> Total
+              <span class="font-semibold">{{ formatHoursDisplay(todayStats.totalHours) }}h</span>
+              Total
             </div>
 
             <Button
@@ -399,9 +400,9 @@
                         <div class="flex justify-between text-xs">
                           <span class="text-gray-600">Progress</span>
                           <span class="font-medium">
-                            {{ jobData.actualHours.toFixed(1) }}h
+                            {{ formatHoursDisplay(jobData.actualHours) }}h
                             <span v-if="jobData.estimatedHours > 0">
-                              / {{ jobData.estimatedHours.toFixed(1) }}h
+                              / {{ formatHoursDisplay(jobData.estimatedHours) }}h
                             </span>
                           </span>
                         </div>
@@ -431,7 +432,9 @@
                             <span v-if="jobData.estimatedHours > 0">
                               {{ jobData.completionPercentage.toFixed(1) }}% complete
                             </span>
-                            <span v-else> {{ jobData.actualHours.toFixed(1) }}h logged </span>
+                            <span v-else>
+                              {{ formatHoursDisplay(jobData.actualHours) }}h logged
+                            </span>
                           </span>
                           <span v-if="jobData.isOverBudget" class="text-red-600 font-medium">
                             Over Budget
@@ -478,7 +481,7 @@
                           <div class="min-w-0">
                             <p class="text-sm text-gray-600">Total Hours</p>
                             <p class="text-lg font-semibold">
-                              {{ consolidatedSummary.totalHours.toFixed(1) }}h
+                              {{ formatHoursDisplay(consolidatedSummary.totalHours) }}h
                             </p>
                           </div>
                         </div>
@@ -571,7 +574,7 @@ import {
 import { useTimesheetAutosave } from '@/composables/useTimesheetAutosave'
 import { useTimesheetSummary } from '@/composables/useTimesheetSummary'
 import { toast } from 'vue-sonner'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, formatHoursDisplay } from '@/utils/string-formatting'
 
 import { useTimesheetEntryGrid } from '@/composables/useTimesheetEntryGrid'
 import { useTimesheetStore } from '@/stores/timesheet'

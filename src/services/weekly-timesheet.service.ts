@@ -4,6 +4,7 @@ import { api } from '@/api/client'
 import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 import { dateService } from '@/services/date.service'
+import { formatHoursDisplay } from '@/utils/string-formatting'
 
 type WeeklyTimesheetData = z.infer<typeof schemas.WeeklyTimesheetData>
 
@@ -51,10 +52,10 @@ export function formatHours(hours: number): string {
   // Handle invalid values
   if (isNaN(hours)) {
     console.warn('formatHours received invalid value:', hours)
-    return '0.0'
+    return '0'
   }
 
-  return hours.toFixed(1)
+  return formatHoursDisplay(hours)
 }
 
 /**
