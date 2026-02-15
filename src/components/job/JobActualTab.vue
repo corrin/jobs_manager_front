@@ -429,7 +429,8 @@ const createInvoice = async () => {
       params: { job_id: props.jobId },
     })
     if (!response.success) {
-      debugLog(response.error || 'Failed to create invoice')
+      const msgs = response.messages?.length ? response.messages : ['Failed to create invoice']
+      msgs.forEach((msg) => toast.error(msg))
       return
     }
     toast.success('Invoice created successfully!')

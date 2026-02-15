@@ -115,7 +115,7 @@ async function fetchDefaults() {
   debugLog('[AdminCompanyView] getCompanyDefaults() result:', data)
   companyDefaults.value = data
   form.value = JSON.parse(JSON.stringify(data))
-  aiProviders.value = (data as { ai_providers?: AIProvider[] }).ai_providers ?? aiProviders.value
+  // AI providers are managed separately via AIProvidersDialog
   debugLog('[AdminCompanyView] form after fetch:', form.value)
   loading.value = false
 }
@@ -139,9 +139,6 @@ async function saveAll() {
         }
       }
     }
-
-    // AI providers are handled separately (not in schema fields)
-    payload.ai_providers = aiProviders.value
 
     debugLog('[AdminCompanyView] saveAll() dynamic payload:', payload)
 

@@ -166,8 +166,6 @@ async function createFromDraft(selectedStockId: string) {
       accounting_date: now.split('T')[0],
       ext_refs: { stock_id: selectedStockId },
       meta: { source: 'workshop_materials' },
-      created_at: now,
-      updated_at: now,
     })
 
     workshopLines.value = [...workshopLines.value, created].filter(isWorkshopLine)
@@ -220,8 +218,6 @@ async function createAdjustFromDraft(unitRevOverride?: number | null) {
       unit_rev: normalizedUnitRev,
       accounting_date: now.split('T')[0],
       meta: { source: 'workshop_materials_adjustment' },
-      created_at: now,
-      updated_at: now,
     })
 
     workshopLines.value = [...workshopLines.value, created].filter(isWorkshopLine)

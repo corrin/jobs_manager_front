@@ -8,7 +8,7 @@ import { toLocalDateString } from '../utils/dateUtils'
 import { useJobsStore } from '../stores/jobs'
 
 type CostLine = z.infer<typeof schemas.CostLine>
-type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
+type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdateRequest>
 type CostSetKind = 'estimate' | 'quote' | 'actual'
 type CostLineInput = Pick<
   CostLine,
@@ -39,7 +39,6 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
     debugLog(`Creating cost line from empty line (${costSetKind}):`, line)
 
     try {
-      const now = new Date().toISOString()
       const accountingDate = toLocalDateString()
       const jobHeader = jobsStore.headersById[jobId]
       const createPayload: CostLineCreateUpdate = {
@@ -51,8 +50,6 @@ export function useCreateCostLineFromEmpty(options: UseCreateCostLineFromEmptyOp
         accounting_date: accountingDate,
         ext_refs: (line.ext_refs as Record<string, unknown>) || {},
         meta: (line.meta as Record<string, unknown>) || {},
-        created_at: now,
-        updated_at: now,
         xero_pay_item: line.kind === 'time' ? (jobHeader?.default_xero_pay_item_id ?? null) : null,
       }
 

@@ -467,6 +467,9 @@ function addLine() {
     specifics: undefined,
     location: undefined,
     job_id: null,
+    job_number: null,
+    client_name: null,
+    job_name: null,
   }
 
   debugLog('Adding new line:', newLine)
@@ -751,24 +754,19 @@ async function syncWithXero() {
       params: { purchase_order_id: orderId },
     })
 
-    switch (true) {
-      case data.success:
-        if (data.online_url) po.value.online_url = data.online_url
-        if (data.xero_id) po.value.xero_id = data.xero_id
-        toast.dismiss('po-sync-loading')
-        toast.success('Purchase Order synced with Xero successfully')
-        debugLog('Xero sync successful:', data)
-        break
-      case data.error:
-        toast.dismiss('po-sync-loading')
-        const errorMessage = extractErrorMessage(data.error, 'Xero sync failed')
-        toast.error(`Xero sync failed: ${errorMessage}`, createErrorToast())
-        debugLog('Xero sync error:', data.error)
-        break
-      default:
-        toast.dismiss('po-sync-loading')
-        toast.error('Xero sync failed: Unknown response format', createErrorToast())
-        debugLog('Xero sync unexpected response:', data)
+    toast.dismiss('po-sync-loading')
+    if (data.success) {
+      if (data.online_url) po.value.online_url = data.online_url
+      if (data.xero_id) po.value.xero_id = data.xero_id
+      toast.success('Purchase Order synced with Xero successfully')
+      if (data.messages?.length) {
+        data.messages.forEach((msg) => toast.warning(msg))
+      }
+      debugLog('Xero sync successful:', data)
+    } else {
+      const msgs = data.messages?.length ? data.messages : ['Xero sync failed']
+      msgs.forEach((msg) => toast.error(msg, createErrorToast()))
+      debugLog('Xero sync failed:', data)
     }
   } catch (err: unknown) {
     toast.dismiss('po-sync-loading')

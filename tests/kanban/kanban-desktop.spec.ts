@@ -168,7 +168,7 @@ test.describe.serial('kanban desktop', () => {
     const jobNumber = jobNumberText.replace('#', '').trim()
     expect(jobNumber).not.toBe('')
 
-    const searchInput = page.getByPlaceholder('Search...')
+    const searchInput = page.getByPlaceholder('Search jobs...')
     await searchInput.fill(jobNumber)
 
     await expect(getVisibleJobCard(page, jobId)).toBeVisible({ timeout: 15000 })

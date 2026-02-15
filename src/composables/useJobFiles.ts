@@ -9,7 +9,7 @@ export function useJobFiles(jobId: string | Ref<string | null>) {
   const jobFiles = computed(() => {
     const id = typeof jobId === 'string' ? jobId : jobId.value
     const job = id ? jobsStore.getJobById(id) : null
-    return job?.files || []
+    return job?.job?.job_files || []
   })
 
   async function uploadFile() {

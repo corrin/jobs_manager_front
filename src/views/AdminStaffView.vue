@@ -164,7 +164,7 @@ const filteredStaff = computed(() =>
           s.hours_sat,
           s.hours_sun,
           s.is_office_staff,
-          s.is_active,
+          s.date_left,
           s.is_superuser,
           s.groups,
           s.user_permissions,

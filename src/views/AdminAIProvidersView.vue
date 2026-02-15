@@ -115,6 +115,8 @@ import { schemas } from '@/api/generated/api'
 import type { z } from 'zod'
 
 type AIProvider = z.infer<typeof schemas.AIProvider>
+// api_key is write-only so not on the read schema — extend for form data
+type AIProviderFormData = AIProvider & { api_key?: string }
 
 const aiProviderService = AIProviderService.getInstance()
 
@@ -159,7 +161,7 @@ const closeModal = () => {
   selectedProvider.value = null
 }
 
-const handleSave = async (providerData: AIProvider) => {
+const handleSave = async (providerData: AIProviderFormData) => {
   try {
     if (providerData.id) {
       // For update, we need to convert to the update format

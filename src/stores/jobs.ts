@@ -171,7 +171,7 @@ export const useJobsStore = defineStore('jobs', () => {
       kanbanJobs.value[jobId] = {
         ...kanbanJob,
         name: detailedJob.job.name,
-        job_status: detailedJob.job.job_status,
+        status: detailedJob.job.job_status,
         client_name: detailedJob.job.client_name || '',
         contact_person: detailedJob.job.contact_name || kanbanJob.contact_person,
         paid: detailedJob.job.paid || false,
@@ -285,9 +285,14 @@ export const useJobsStore = defineStore('jobs', () => {
   }
 
   const updateJobStatus = (jobId: string, newStatus: string): void => {
-    updateDetailedJob(jobId, { job_status: newStatus })
+    const existingJob = detailedJobs.value[jobId]
+    if (existingJob) {
+      updateDetailedJob(jobId, {
+        job: { ...existingJob.job, job_status: newStatus },
+      })
+    }
 
-    updateKanbanJob(jobId, { job_status: newStatus })
+    updateKanbanJob(jobId, { status: newStatus })
   }
 
   const updateJobEvents = (jobId: string, events: JobEvent[]): void => {
@@ -331,10 +336,8 @@ export const useJobsStore = defineStore('jobs', () => {
       job_id: job.id,
       job_number: job.job_number,
       name: job.name,
-      client: {
-        id: job.client_id ?? '',
-        name: job.client_name ?? '',
-      },
+      client_id: job.client_id ?? null,
+      client_name: job.client_name ?? null,
       contact_id: job.contact_id ?? null,
       contact_name: job.contact_name ?? null,
       status: job.job_status as JobHeaderResponse['status'],
@@ -363,7 +366,7 @@ export const useJobsStore = defineStore('jobs', () => {
     // Immutable update to force dependent computeds/watchers to re-run
     headersById.value = {
       ...headersById.value,
-      [jobId]: { ...cur, ...patch, client: patch.client ?? cur.client },
+      [jobId]: { ...cur, ...patch },
     }
   }
 

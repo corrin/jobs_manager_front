@@ -15,7 +15,7 @@
                 <div>
                   <ClientLookup
                     id="client"
-                    v-model="formData.client_name as string"
+                    v-model="clientDisplayName"
                     @update:selected-id="formData.client_id = $event"
                     @update:selected-client="handleClientSelection"
                     label="Client"
@@ -62,7 +62,7 @@
                     id="contact"
                     v-model="contactDisplayName"
                     :client-id="formData.client_id as string"
-                    :client-name="String(formData.client_name || '')"
+                    :client-name="clientDisplayName"
                     label="Contact"
                     placeholder="Search or add contact person"
                     :optional="true"
@@ -298,7 +298,6 @@ const router = useRouter()
 const formData = ref<JobCreateData>({
   name: '',
   client_id: '',
-  client_name: '',
   description: '',
   order_number: '',
   notes: '',
@@ -307,6 +306,8 @@ const formData = ref<JobCreateData>({
   estimated_time: 0,
   pricing_methodology: 'time_materials',
 })
+
+const clientDisplayName = ref('')
 
 const selectedClient = ref<ClientSearchResult | null>(null)
 const selectedContact = ref<ClientContact | null>(null)
@@ -336,7 +337,7 @@ const handleClientSelection = async (client: ClientSearchResult | null) => {
   }
 
   if (client) {
-    formData.value.client_name = client.name
+    clientDisplayName.value = client.name
     formData.value.client_id = client.id
 
     debugLog('JobCreateView - Client selected, waiting for ContactSelector to update')
@@ -356,7 +357,7 @@ const handleClientSelection = async (client: ClientSearchResult | null) => {
     }
   } else {
     // Clear client fields if client is deselected
-    formData.value.client_name = ''
+    clientDisplayName.value = ''
     formData.value.client_id = ''
     debugLog('JobCreateView - Client cleared')
   }
@@ -473,7 +474,7 @@ const handleSubmit = async () => {
         query: { new: 'true', tab: defaultTab },
       })
     } else {
-      throw new Error(String(result.error) || 'Failed to create job')
+      throw new Error(result.message || 'Failed to create job')
     }
   } catch (error: unknown) {
     const errorMessage = (error as Error).message || String(error)
@@ -519,7 +520,7 @@ onMounted(() => {
   } else {
     formData.value.name = ''
     formData.value.client_id = ''
-    formData.value.client_name = ''
+    clientDisplayName.value = ''
     formData.value.description = ''
     formData.value.order_number = ''
     formData.value.notes = ''

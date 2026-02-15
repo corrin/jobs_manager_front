@@ -155,7 +155,9 @@ export function useWorkshopTimesheetForm(options: {
     )
     formState.description = entry.description ?? ''
     formState.isBillable = entry.is_billable
-    formState.rateMultiplier = rateLabelFromMultiplier(safeRateMultiplier(entry.rate_multiplier))
+    formState.rateMultiplier = rateLabelFromMultiplier(
+      safeRateMultiplier(entry.wage_rate_multiplier),
+    )
     isFormOpen.value = true
   }
 

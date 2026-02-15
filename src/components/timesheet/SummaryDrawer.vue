@@ -211,7 +211,7 @@ import { z } from 'zod'
 import { formatCurrency, formatHoursDisplay } from '@/utils/string-formatting'
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
-type FullJob = z.infer<typeof schemas.Job>
+type FullJob = z.infer<typeof schemas.Job> | z.infer<typeof schemas.JobSummary>
 
 interface Props {
   open: boolean
@@ -273,7 +273,7 @@ const loadJobDetails = async () => {
   try {
     const jobPromises = jobIdsWithEntries.value.map(async (jobId) => {
       try {
-        const jobDetail = await api.getFullJob({ params: { job_id: jobId } })
+        const jobDetail = await api.getJobSummary({ params: { job_id: jobId } })
         debugLog('Job detail: ', jobDetail)
         return { jobId, job: jobDetail.data.job }
       } catch (err) {

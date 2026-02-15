@@ -74,12 +74,11 @@ export class QuoteChatService {
 
   convertToVueMessage(message: JobQuoteChat): VueChatMessage {
     return {
-      _id: message.id?.toString() || '',
+      _id: message.message_id || '',
       content: message.content || '',
       senderId: message.role === 'user' ? 'user-1' : 'assistant-1',
       username: message.role === 'user' ? 'You' : 'Quoting Assistant',
-      timestamp:
-        (message['created_at' as keyof JobQuoteChat] as string) || new Date().toISOString(),
+      timestamp: message.timestamp || new Date().toISOString(),
       system: false,
       metadata: (message.metadata as Record<string, unknown>) || undefined,
     }

@@ -47,12 +47,8 @@ export function useJobHeaderAutosave(headerRef: Ref<JobHeaderResponse | null>) {
   const headerToPartialHeaderPatch = (patch: Partial<Job>): Partial<JobHeaderResponse> => {
     const p: Partial<JobHeaderResponse> = {}
     if ('name' in patch) p.name = patch.name as string
-    if ('client_id' in patch || 'client_name' in patch) {
-      p.client = {
-        id: (patch.client_id as string | null | undefined) ?? undefined,
-        name: (patch.client_name as string | null | undefined) ?? undefined,
-      } as JobHeaderResponse['client']
-    }
+    if ('client_id' in patch) p.client_id = patch.client_id as string | null
+    if ('client_name' in patch) p.client_name = patch.client_name as string | null
     if ('job_status' in patch)
       p.status = (patch.job_status as JobStatusKey | undefined) ?? undefined
     if ('pricing_methodology' in patch)
@@ -73,20 +69,6 @@ export function useJobHeaderAutosave(headerRef: Ref<JobHeaderResponse | null>) {
    * Here we do the inverse mapping (local fields -> header).
    */
   const applyPatchToHeader = (base: JobHeaderResponse, patch: Partial<Job>): JobHeaderResponse => {
-    const client =
-      'client_id' in patch || 'client_name' in patch
-        ? {
-            id:
-              (patch.client_id as string | null | undefined) !== undefined
-                ? ((patch.client_id as string | null) ?? '')
-                : (base.client?.id ?? ''),
-            name:
-              (patch.client_name as string | null | undefined) !== undefined
-                ? ((patch.client_name as string | null) ?? '')
-                : (base.client?.name ?? ''),
-          }
-        : base.client
-
     const status =
       patch.job_status !== undefined && patch.job_status !== null
         ? (patch.job_status as JobStatusKey)
@@ -95,7 +77,14 @@ export function useJobHeaderAutosave(headerRef: Ref<JobHeaderResponse | null>) {
     return {
       ...base,
       name: patch.name ?? base.name,
-      client: client,
+      client_id:
+        patch.client_id !== undefined
+          ? ((patch.client_id as string | null) ?? null)
+          : base.client_id,
+      client_name:
+        patch.client_name !== undefined
+          ? ((patch.client_name as string | null) ?? null)
+          : base.client_name,
       status,
       pricing_methodology:
         (patch.pricing_methodology as PricingMethodology | undefined) ?? base.pricing_methodology,
@@ -184,7 +173,7 @@ export function useJobHeaderAutosave(headerRef: Ref<JobHeaderResponse | null>) {
                   beforeValues[field] = headerSnapshot.name
                   break
                 case 'client_id':
-                  beforeValues[field] = headerSnapshot.client?.id ?? null
+                  beforeValues[field] = headerSnapshot.client_id ?? null
                   break
                 case 'rejected_flag':
                   beforeValues[field] = headerSnapshot.rejected_flag ?? false
@@ -283,7 +272,6 @@ export function useJobHeaderAutosave(headerRef: Ref<JobHeaderResponse | null>) {
       localHeader.value = {
         ...localHeader.value,
         ...newHeader,
-        client: newHeader.client,
       }
       originalHeader.value = newHeader
     },

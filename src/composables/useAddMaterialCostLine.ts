@@ -6,7 +6,7 @@ import type { z } from 'zod'
 import { toLocalDateString } from '../utils/dateUtils'
 
 type CostLine = z.infer<typeof schemas.CostLine>
-type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
+type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdateRequest>
 type CostSetKind = 'estimate' | 'quote' | 'actual'
 type MaterialCostLineInput = Pick<
   CostLine,
@@ -41,7 +41,6 @@ export function useAddMaterialCostLine(options: UseAddMaterialCostLineOptions) {
     toast.info('Adding material cost line...', { id: 'add-material' })
 
     try {
-      const now = new Date().toISOString()
       const accountingDate = toLocalDateString()
       const createPayload: CostLineCreateUpdate = {
         kind: 'material' as const,
@@ -52,8 +51,6 @@ export function useAddMaterialCostLine(options: UseAddMaterialCostLineOptions) {
         accounting_date: accountingDate,
         ext_refs: (payload.ext_refs as Record<string, unknown>) || {},
         meta: (payload.meta as Record<string, unknown>) || {},
-        created_at: now,
-        updated_at: now,
       }
 
       const created = await costlineService.createCostLine(jobId, costSetKind, createPayload)

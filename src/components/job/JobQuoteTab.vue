@@ -493,6 +493,7 @@ import { toast } from 'vue-sonner'
 import { formatCurrency } from '@/utils/string-formatting'
 import { schemas } from '../../api/generated/api'
 import { api } from '../../api/client'
+import type { AxiosError } from 'axios'
 import { z } from 'zod'
 import { costlineService } from '../../services/costline.service'
 import { fetchCostSet } from '../../services/costing.service'
@@ -812,16 +813,25 @@ const executeCreateQuote = async (breakdown: boolean) => {
       },
     )
     if (!response.success) {
-      debugLog(response.error || 'Failed to create quote')
+      const msgs = response.messages?.length ? response.messages : ['Failed to create quote']
+      msgs.forEach((msg) => toast.error(msg))
       return
     }
     toast.success('Quote created successfully!')
+    if (response.messages?.length) {
+      response.messages.forEach((msg) => toast.warning(msg))
+    }
     isQuoteDeleted.value = false
     await refreshQuoteData()
     emit('cost-line-changed')
-  } catch (err) {
-    console.error('Error creating quote:', err)
-    toast.error('Failed to create quote.')
+  } catch (err: unknown) {
+    debugLog('Error creating quote:', err)
+    let msg = 'Unexpected error while trying to create quote.'
+    if ((err as AxiosError).isAxiosError) {
+      const axiosErr = err as AxiosError<{ message: string }>
+      msg = axiosErr.response?.data?.message ?? msg
+    }
+    toast.error(`Failed to create quote: ${msg}`)
   } finally {
     isCreatingQuote.value = false
   }
@@ -869,16 +879,25 @@ const deleteQuoteOnXero = async () => {
       params: { job_id: props.jobId },
     })
     if (!response.success) {
-      debugLog(response.error || 'Failed to delete quote')
+      const msgs = response.messages?.length ? response.messages : ['Failed to delete quote']
+      msgs.forEach((msg) => toast.error(msg))
       return
     }
     isQuoteDeleted.value = true
     toast.success('Quote deleted successfully!')
+    if (response.messages?.length) {
+      response.messages.forEach((msg) => toast.warning(msg))
+    }
     await refreshQuoteData()
     emit('cost-line-changed')
-  } catch (err) {
-    console.error('Error deleting quote:', err)
-    toast.error('Failed to delete quote.')
+  } catch (err: unknown) {
+    debugLog('Error deleting quote:', err)
+    let msg = 'Unexpected error while trying to delete quote.'
+    if ((err as AxiosError).isAxiosError) {
+      const axiosErr = err as AxiosError<{ message: string }>
+      msg = axiosErr.response?.data?.message ?? msg
+    }
+    toast.error(`Failed to delete quote: ${msg}`)
   } finally {
     isDeletingQuote.value = false
   }

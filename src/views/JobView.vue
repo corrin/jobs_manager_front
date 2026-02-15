@@ -527,8 +527,8 @@ const jobDataWithPaid = computed(() => {
     id: h.job_id,
     job_number: h.job_number,
     name: h.name,
-    client_name: h.client?.name ?? '',
-    client_id: h.client?.id ?? '',
+    client_name: h.client_name ?? '',
+    client_id: h.client_id ?? '',
     job_status: h.status ?? '',
     pricing_methodology: h.pricing_methodology ?? '',
     quoted: h.quoted,
@@ -544,8 +544,8 @@ watch(
   (h) => {
     if (!h) return
     localJobName.value = h.name
-    localClientName.value = h.client?.name ?? ''
-    localClientId.value = h.client?.id ?? ''
+    localClientName.value = h.client_name ?? ''
+    localClientId.value = h.client_id ?? ''
     localJobStatus.value = h.status ?? ''
     localPricingMethodology.value = h.pricing_methodology ?? ''
     localQuoted.value = Boolean(h.quoted)

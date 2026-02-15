@@ -79,7 +79,7 @@ async function recordStopwatchTime() {
       hours,
       description,
       is_billable: true,
-      rate_multiplier: rateMultiplierOrd,
+      wage_rate_multiplier: rateMultiplierOrd,
     })
 
     toast.success('Workshop time recorded.')

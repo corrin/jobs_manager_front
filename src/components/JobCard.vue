@@ -310,7 +310,6 @@ const assignStaffToJob = async (staffId: string | null): Promise<void> => {
   }
 
   const payload: AssignJobRequest = {
-    job_id: props.job.id,
     staff_id: staffId,
   }
 

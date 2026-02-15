@@ -5,14 +5,10 @@ import { schemas } from '@/api/generated/api'
 
 /**
  * This type represents a job selection item in the purchase order context.
- * It includes essential job details required for the purchase order process, and only that, by using `Pick`.
- * This ensures that we only include the fields necessary for the purchase order selection.
- * It is FULLY based on the generated schema, so it will always be in sync with the backend.
+ * Based on the JobForPurchasing schema which includes only the fields
+ * needed for purchase order job selection.
  */
-type POJobSelectionItem = Pick<
-  z.infer<typeof schemas.Job>,
-  'id' | 'job_number' | 'name' | 'client_name' | 'status' | 'charge_out_rate'
->
+type POJobSelectionItem = z.infer<typeof schemas.JobForPurchasing>
 
 export class PurchaseOrderJobCellEditor implements ICellEditor {
   private value: string = ''
@@ -179,9 +175,6 @@ export class PurchaseOrderJobCellEditor implements ICellEditor {
           </div>
           <div style="font-size: 14px; color: #374151; font-weight: 500;">${jobName}</div>
           <div style="font-size: 12px; color: #6B7280;">Client: ${clientName}</div>
-          <div style="font-size: 11px; color: #9CA3AF;">
-            Rate: $${job.charge_out_rate}/hr
-          </div>
         </div>
       `
 

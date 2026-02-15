@@ -89,8 +89,8 @@ const KPIThresholds = z.object({
   kpi_daily_billable_hours_amber: z.number(),
   kpi_daily_gp_target: z.number(),
   kpi_daily_shop_hours_percentage: z.number(),
-  kpi_daily_profit_green: z.number(),
-  kpi_daily_profit_amber: z.number(),
+  kpi_daily_gp_green: z.number(),
+  kpi_daily_gp_amber: z.number(),
 })
 const KPICalendarData = z.object({
   calendar_data: z.record(KPIDayData),
@@ -372,8 +372,8 @@ const CompanyDefaults = z.object({
   kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000).optional(),
   kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000).optional(),
   kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000).optional(),
-  kpi_daily_profit_green: z.number().gt(-100000000).lt(100000000).optional(),
-  kpi_daily_profit_amber: z.number().gt(-100000000).lt(100000000).optional(),
+  kpi_daily_gp_green: z.number().gt(-100000000).lt(100000000).optional(),
+  kpi_daily_gp_amber: z.number().gt(-100000000).lt(100000000).optional(),
 })
 const CompanyDefaultsRequest = z
   .object({
@@ -423,8 +423,8 @@ const CompanyDefaultsRequest = z
     kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000),
     kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000),
     kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000),
-    kpi_daily_profit_green: z.number().gt(-100000000).lt(100000000),
-    kpi_daily_profit_amber: z.number().gt(-100000000).lt(100000000),
+    kpi_daily_gp_green: z.number().gt(-100000000).lt(100000000),
+    kpi_daily_gp_amber: z.number().gt(-100000000).lt(100000000),
   })
   .partial()
 const PatchedCompanyDefaultsRequest = z
@@ -475,8 +475,8 @@ const PatchedCompanyDefaultsRequest = z
     kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000),
     kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000),
     kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000),
-    kpi_daily_profit_green: z.number().gt(-100000000).lt(100000000),
-    kpi_daily_profit_amber: z.number().gt(-100000000).lt(100000000),
+    kpi_daily_gp_green: z.number().gt(-100000000).lt(100000000),
+    kpi_daily_gp_amber: z.number().gt(-100000000).lt(100000000),
   })
   .partial()
 const SettingsField = z.object({
@@ -918,6 +918,7 @@ const KanbanJob = z.object({
   created_by_id: z.string().uuid().nullable(),
   created_at: z.string().nullable(),
   priority: z.number(),
+  shop_job: z.boolean(),
 })
 const AdvancedSearchResponse = z
   .object({
@@ -953,6 +954,7 @@ const KanbanColumnJob = z.object({
   created_by_id: z.string().nullable(),
   created_at: z.string().nullable(),
   priority: z.number(),
+  shop_job: z.boolean(),
   badge_label: z.string(),
   badge_color: z.string(),
 })
@@ -962,6 +964,7 @@ const FetchJobsByColumnResponse = z
     jobs: z.array(KanbanColumnJob),
     total: z.number().int(),
     filtered_count: z.number().int(),
+    has_more: z.boolean(),
     error: z.string(),
   })
   .partial()
@@ -1043,10 +1046,10 @@ const PatchedWorkshopTimesheetEntryUpdateRequest = z
   })
   .partial()
 const WorkshopPDFResponse = z.object({ status: z.string(), message: z.string() }).partial()
-const Kind332Enum = z.enum(['time', 'material', 'adjust'])
+const CostLineKindEnum = z.enum(['time', 'material', 'adjust'])
 const PatchedCostLineCreateUpdateRequest = z
   .object({
-    kind: Kind332Enum,
+    kind: CostLineKindEnum,
     desc: z.string().max(255),
     quantity: z.number().gt(-10000000).lt(10000000),
     unit_cost: z.number().gt(-100000000).lt(100000000),
@@ -1057,22 +1060,9 @@ const PatchedCostLineCreateUpdateRequest = z
     xero_pay_item: z.string().uuid().nullable(),
   })
   .partial()
-const CostLineCreateUpdate = z.object({
-  kind: Kind332Enum,
-  desc: z.string().max(255).optional(),
-  quantity: z.number().gt(-10000000).lt(10000000).optional(),
-  unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
-  unit_rev: z.number().gt(-100000000).lt(100000000).optional(),
-  accounting_date: z.string(),
-  ext_refs: z.object({}).partial().passthrough().optional(),
-  meta: z.object({}).partial().passthrough().optional(),
-  created_at: z.string().datetime({ offset: true }),
-  updated_at: z.string().datetime({ offset: true }),
-  xero_pay_item: z.string().uuid().nullish(),
-})
 const CostLine = z.object({
   id: z.string().uuid(),
-  kind: Kind332Enum,
+  kind: CostLineKindEnum,
   desc: z.string().max(255).optional(),
   quantity: z.number().gt(-10000000).lt(10000000).optional(),
   unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
@@ -1091,6 +1081,7 @@ const CostLine = z.object({
   total_cost: z.number(),
   total_rev: z.number(),
 })
+const CostLineErrorResponse = z.object({ error: z.string() })
 const StockConsumeResponse = z.object({
   success: z.boolean(),
   message: z.string().optional(),
@@ -1103,7 +1094,6 @@ const CostLineApprovalResponse = z.object({
   line: CostLine,
 })
 const CostLineApprovalResult = z.union([StockConsumeResponse, CostLineApprovalResponse])
-const CostLineErrorResponse = z.object({ error: z.string() })
 const BrokenFKReference = z.object({
   model: z.string(),
   record_id: z.string(),
@@ -1223,22 +1213,22 @@ const QuoteSpreadsheet = z.object({
   job_number: z.number().int(),
   job_name: z.string(),
 })
-const Status7aeEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
+const QuoteStatusEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
 const Quote = z.object({
   id: z.string().uuid(),
   xero_id: z.string().uuid(),
-  status: Status7aeEnum.optional(),
+  status: QuoteStatusEnum.optional(),
   date: z.string(),
   total_excl_tax: z.number(),
   total_incl_tax: z.number(),
   online_url: z.string().max(200).url().nullish(),
 })
-const Status1beEnum = z.enum(['DRAFT', 'SUBMITTED', 'AUTHORISED', 'DELETED', 'VOIDED', 'PAID'])
+const InvoiceStatusEnum = z.enum(['DRAFT', 'SUBMITTED', 'AUTHORISED', 'DELETED', 'VOIDED', 'PAID'])
 const Invoice = z.object({
   id: z.string().uuid(),
   xero_id: z.string().uuid(),
   number: z.string().max(255),
-  status: Status1beEnum.optional(),
+  status: InvoiceStatusEnum.optional(),
   date: z.string(),
   due_date: z.string().nullish(),
   total_excl_tax: z.number(),
@@ -1249,13 +1239,13 @@ const Invoice = z.object({
 })
 const XeroQuote = z
   .object({
-    status: Status7aeEnum,
+    status: QuoteStatusEnum,
     online_url: z.string().max(200).url().nullable(),
   })
   .partial()
 const XeroInvoice = z.object({
   number: z.string().max(255),
-  status: Status1beEnum.optional(),
+  status: InvoiceStatusEnum.optional(),
   online_url: z.string().max(200).url().nullish(),
 })
 const Job = z.object({
@@ -1355,7 +1345,7 @@ const JobBasicInformationResponse = z.object({
   notes: z.string().nullable(),
 })
 const CostLineCreateUpdateRequest = z.object({
-  kind: Kind332Enum,
+  kind: CostLineKindEnum,
   desc: z.string().max(255).optional(),
   quantity: z.number().gt(-10000000).lt(10000000).optional(),
   unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
@@ -1461,8 +1451,7 @@ const JobFileThumbnailErrorResponse = z.object({
   status: z.string().optional().default('error'),
   message: z.string(),
 })
-const JobClientHeader = z.object({ id: z.string().uuid(), name: z.string() })
-const Status7b9Enum = z.enum([
+const JobStatusEnum = z.enum([
   'draft',
   'awaiting_approval',
   'approved',
@@ -1474,7 +1463,8 @@ const Status7b9Enum = z.enum([
 ])
 const JobHeaderResponse = z.object({
   job_id: z.string().uuid(),
-  client: JobClientHeader,
+  client_id: z.string().uuid().nullable(),
+  client_name: z.string().nullable(),
   contact_id: z.string().uuid().nullable(),
   contact_name: z.string().nullable(),
   quoted: z.boolean(),
@@ -1482,7 +1472,11 @@ const JobHeaderResponse = z.object({
   default_xero_pay_item_name: z.string().nullable(),
   job_number: z.number().int().gte(-2147483648).lte(2147483647),
   name: z.string().max(100),
-  status: Status7b9Enum.optional(),
+  description: z.string().nullish(),
+  status: JobStatusEnum.optional(),
+  order_number: z.string().max(100).nullish(),
+  delivery_date: z.string().nullish(),
+  notes: z.string().nullish(),
   pricing_methodology: PricingMethodologyEnum.optional(),
   price_cap: z.number().gt(-100000000).lt(100000000).nullish(),
   speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
@@ -1538,6 +1532,62 @@ const QuoteImportStatusResponse = z.object({
   revision: z.number().int().optional(),
   created: z.string().datetime({ offset: true }).optional(),
   summary: z.unknown().optional(),
+})
+const CostSetSummaryOnly = z.object({
+  id: z.string(),
+  job: z.string().uuid(),
+  kind: CostSetKindEnum,
+  rev: z.number().int(),
+  summary: CostSetSummary,
+  created: z.string().datetime({ offset: true }),
+  cost_lines: z.array(z.unknown()),
+})
+const JobSummary = z.object({
+  id: z.string().uuid(),
+  name: z.string().max(100),
+  client_id: z.string().uuid().nullish(),
+  client_name: z.string().nullable(),
+  contact_id: z.string().uuid().nullish(),
+  contact_name: z.string().nullable(),
+  job_number: z.number().int().gte(-2147483648).lte(2147483647),
+  notes: z.string().nullish(),
+  order_number: z.string().max(100).nullish(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+  description: z.string().nullish(),
+  latest_estimate: CostSetSummaryOnly,
+  latest_quote: CostSetSummaryOnly,
+  latest_actual: CostSetSummaryOnly,
+  job_status: z.string(),
+  delivery_date: z.string().nullish(),
+  paid: z.boolean().optional(),
+  quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
+  job_is_valid: z.boolean().optional(),
+  job_files: z.array(JobFile).optional(),
+  charge_out_rate: z.number().gt(-100000000).lt(100000000),
+  pricing_methodology: PricingMethodologyEnum.optional(),
+  price_cap: z.number().gt(-100000000).lt(100000000).nullish(),
+  speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
+  quote_sheet: QuoteSpreadsheet.nullable(),
+  quoted: z.boolean(),
+  fully_invoiced: z.boolean(),
+  quote: Quote.nullable(),
+  invoices: z.array(Invoice),
+  xero_quote: XeroQuote.nullable(),
+  xero_invoices: z.array(XeroInvoice),
+  shop_job: z.boolean(),
+  rejected_flag: z.boolean().optional(),
+  default_xero_pay_item_id: z.string().uuid().nullish(),
+  default_xero_pay_item_name: z.string().nullable(),
+})
+const JobSummaryData = z.object({
+  job: JobSummary,
+  events: z.array(JobEvent),
+  company_defaults: CompanyDefaultsJobDetail,
+})
+const JobSummaryResponse = z.object({
+  success: z.boolean().optional().default(true),
+  data: JobSummaryData,
 })
 const TimelineEntry = z.object({
   id: z.string().uuid(),
@@ -1816,7 +1866,7 @@ const SWPGenerateRequestRequest = z.object({
 })
 const TimesheetCostLine = z.object({
   id: z.string().uuid(),
-  kind: Kind332Enum,
+  kind: CostLineKindEnum,
   desc: z.string(),
   quantity: z.number().gt(-10000000).lt(10000000),
   unit_cost: z.number().gt(-100000000).lt(100000000),
@@ -1855,6 +1905,7 @@ const ModernTimesheetSummary = z.object({
   total_cost: z.number(),
   total_revenue: z.number(),
   entry_count: z.number().int(),
+  scheduled_hours: z.number(),
 })
 const ModernTimesheetEntryGetResponse = z.object({
   cost_lines: z.array(TimesheetCostLine),
@@ -1892,7 +1943,7 @@ const JobForPurchasing = z.object({
   job_number: z.number().int().gte(-2147483648).lte(2147483647),
   name: z.string().max(100),
   client_name: z.string(),
-  status: Status7b9Enum.optional(),
+  status: JobStatusEnum.optional(),
   is_stock_holding: z.boolean(),
   job_display_name: z.string(),
 })
@@ -2009,31 +2060,14 @@ const PurchaseOrderCreateRequest = z
     lines: z.array(PurchaseOrderLineCreateRequest),
   })
   .partial()
-const PurchaseOrderLineCreate = z
-  .object({
-    job_id: z.string().uuid().nullable(),
-    description: z.string().max(255),
-    quantity: z.number().gt(-100000000).lt(100000000).default(0),
-    unit_cost: z.number().gt(-100000000).lt(100000000).nullable(),
-    price_tbc: z.boolean().default(false),
-    item_code: z.string().max(100),
-    metal_type: z.string().max(100),
-    alloy: z.string().max(100),
-    specifics: z.string().max(255),
-    location: z.string().max(255),
-    dimensions: z.string().max(255),
-  })
-  .partial()
-const PurchaseOrderCreate = z
-  .object({
-    supplier_id: z.string().uuid().nullable(),
-    pickup_address_id: z.string().uuid().nullable(),
-    reference: z.string().max(255),
-    order_date: z.string().nullable(),
-    expected_delivery: z.string().nullable(),
-    lines: z.array(PurchaseOrderLineCreate),
-  })
-  .partial()
+const PurchaseOrderCreateResponse = z.object({
+  id: z.string().uuid(),
+  po_number: z.string(),
+})
+const PurchasingErrorResponse = z.object({
+  error: z.string(),
+  details: z.string().optional(),
+})
 const PurchaseOrderDetailStatusEnum = z.enum([
   'draft',
   'submitted',
@@ -2070,6 +2104,9 @@ const PurchaseOrderLine = z.object({
   specifics: z.string().max(255).nullish(),
   location: z.string().max(255).nullish(),
   job_id: z.string().uuid().nullable(),
+  job_number: z.number().int().nullable(),
+  client_name: z.string().nullable(),
+  job_name: z.string().nullable(),
 })
 const PurchaseOrderDetail = z.object({
   id: z.string().uuid(),
@@ -2143,9 +2180,9 @@ const PurchaseOrderUpdate = z
     lines: z.array(PurchaseOrderLineUpdate),
   })
   .partial()
-const TypeC98Enum = z.enum(['stock', 'job'])
+const AllocationTypeEnum = z.enum(['job', 'stock'])
 const AllocationItem = z.object({
-  type: TypeC98Enum,
+  type: AllocationTypeEnum,
   job_id: z.string().uuid(),
   job_name: z.string(),
   quantity: z.number(),
@@ -2163,7 +2200,7 @@ const PurchaseOrderAllocationsResponse = z.object({
   allocations: z.record(z.array(AllocationItem)),
 })
 const AllocationDetailsResponse = z.object({
-  type: TypeC98Enum,
+  type: AllocationTypeEnum,
   id: z.string().uuid(),
   description: z.string(),
   quantity: z.number(),
@@ -2196,10 +2233,6 @@ const PurchaseOrderEvent = z.object({
 const PurchaseOrderEventsResponse = z.object({
   events: z.array(PurchaseOrderEvent),
 })
-const PurchasingErrorResponse = z.object({
-  error: z.string(),
-  details: z.string().optional(),
-})
 const PurchaseOrderEventCreateRequest = z.object({
   description: z.string().min(1).max(500),
 })
@@ -2207,7 +2240,6 @@ const PurchaseOrderEventCreateResponse = z.object({
   success: z.boolean(),
   event: PurchaseOrderEvent,
 })
-const AllocationTypeEnum = z.enum(['job', 'stock'])
 const AllocationDeleteRequest = z.object({
   allocation_type: AllocationTypeEnum,
   allocation_id: z.string().uuid(),
@@ -2394,10 +2426,11 @@ const ModernTimesheetJob = z.object({
   job_number: z.number().int().gte(-2147483648).lte(2147483647),
   name: z.string().max(100),
   client_name: z.string().nullable(),
-  status: Status7b9Enum.optional(),
+  status: JobStatusEnum.optional(),
   charge_out_rate: z.number().gt(-100000000).lt(100000000),
   has_actual_costset: z.boolean(),
   leave_type: z.string().nullable(),
+  estimated_hours: z.number().nullable(),
   default_xero_pay_item_id: z.string().uuid(),
   default_xero_pay_item_name: z.string(),
 })
@@ -2483,6 +2516,7 @@ const WeeklyStaffData = z.object({
   status: z.string(),
   total_billed_hours: z.number().gt(-100000000).lt(100000000),
   total_unbilled_hours: z.number().gt(-100000000).lt(100000000),
+  total_overtime_hours: z.number().gt(-100000000).lt(100000000),
   total_overtime_1_5x_hours: z.number().gt(-100000000).lt(100000000),
   total_overtime_2x_hours: z.number().gt(-100000000).lt(100000000),
   total_sick_leave_hours: z.number().gt(-100000000).lt(100000000),
@@ -2651,14 +2685,13 @@ export const schemas = {
   WorkshopTimesheetEntryRequestRequest,
   PatchedWorkshopTimesheetEntryUpdateRequest,
   WorkshopPDFResponse,
-  Kind332Enum,
+  CostLineKindEnum,
   PatchedCostLineCreateUpdateRequest,
-  CostLineCreateUpdate,
   CostLine,
+  CostLineErrorResponse,
   StockConsumeResponse,
   CostLineApprovalResponse,
   CostLineApprovalResult,
-  CostLineErrorResponse,
   BrokenFKReference,
   BrokenJSONReference,
   BusinessRuleViolation,
@@ -2678,9 +2711,9 @@ export const schemas = {
   PricingMethodologyEnum,
   SpeedQualityTradeoffEnum,
   QuoteSpreadsheet,
-  Status7aeEnum,
+  QuoteStatusEnum,
   Quote,
-  Status1beEnum,
+  InvoiceStatusEnum,
   Invoice,
   XeroQuote,
   XeroInvoice,
@@ -2711,8 +2744,7 @@ export const schemas = {
   JobFileRequest,
   JobFileUpdateSuccessResponse,
   JobFileThumbnailErrorResponse,
-  JobClientHeader,
-  Status7b9Enum,
+  JobStatusEnum,
   JobHeaderResponse,
   JobInvoicesResponse,
   DocumentTypeEnum,
@@ -2721,6 +2753,10 @@ export const schemas = {
   JobQuoteAcceptanceRequest,
   JobQuoteAcceptance,
   QuoteImportStatusResponse,
+  CostSetSummaryOnly,
+  JobSummary,
+  JobSummaryData,
+  JobSummaryResponse,
   TimelineEntry,
   JobTimelineResponse,
   JobUndoRequest,
@@ -2788,8 +2824,8 @@ export const schemas = {
   PurchaseOrderList,
   PurchaseOrderLineCreateRequest,
   PurchaseOrderCreateRequest,
-  PurchaseOrderLineCreate,
-  PurchaseOrderCreate,
+  PurchaseOrderCreateResponse,
+  PurchasingErrorResponse,
   PurchaseOrderDetailStatusEnum,
   MetalTypeEnum,
   BlankEnum,
@@ -2800,7 +2836,7 @@ export const schemas = {
   PatchedPurchaseOrderUpdateRequest,
   PurchaseOrderLineUpdate,
   PurchaseOrderUpdate,
-  TypeC98Enum,
+  AllocationTypeEnum,
   AllocationItem,
   PurchaseOrderAllocationsResponse,
   AllocationDetailsResponse,
@@ -2808,10 +2844,8 @@ export const schemas = {
   PurchaseOrderEmailResponse,
   PurchaseOrderEvent,
   PurchaseOrderEventsResponse,
-  PurchasingErrorResponse,
   PurchaseOrderEventCreateRequest,
   PurchaseOrderEventCreateResponse,
-  AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
   PurchaseOrderLastNumberResponse,
@@ -5165,7 +5199,21 @@ Dynamically infers the stock adjustment based on quantity change`,
         schema: z.string(),
       },
     ],
-    response: CostLineCreateUpdate,
+    response: CostLine,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }),
+      },
+      {
+        status: 403,
+        schema: z.object({ error: z.string() }),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }),
+      },
+    ],
   },
   {
     method: 'post',
@@ -5493,7 +5541,21 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         schema: z.string(),
       },
     ],
-    response: CostLineCreateUpdate,
+    response: CostLine,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }),
+      },
+      {
+        status: 403,
+        schema: z.object({ error: z.string() }),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }),
+      },
+    ],
   },
   {
     method: 'post',
@@ -5513,7 +5575,21 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
         schema: z.string().uuid(),
       },
     ],
-    response: CostLineCreateUpdate,
+    response: CostLine,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }),
+      },
+      {
+        status: 403,
+        schema: z.object({ error: z.string() }),
+      },
+      {
+        status: 500,
+        schema: z.object({ error: z.string() }),
+      },
+    ],
   },
   {
     method: 'get',
@@ -5984,6 +6060,27 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       },
     ],
     response: QuoteImportStatusResponse,
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/summary/',
+    alias: 'getJobSummary',
+    description: `Fetch job summary with cost set totals but no individual cost lines or events.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobSummaryResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }),
+      },
+    ],
   },
   {
     method: 'get',
@@ -6580,7 +6677,7 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
   {
     method: 'post',
     path: '/purchasing/rest/purchase-orders/',
-    alias: 'purchasing_rest_purchase_orders_create',
+    alias: 'createPurchaseOrder',
     description: `Create new purchase order.`,
     requestFormat: 'json',
     parameters: [
@@ -6590,7 +6687,17 @@ Concurrency is controlled in this endpoint (ETag/If-Match).`,
         schema: PurchaseOrderCreateRequest,
       },
     ],
-    response: PurchaseOrderCreate,
+    response: PurchaseOrderCreateResponse,
+    errors: [
+      {
+        status: 400,
+        schema: PurchasingErrorResponse,
+      },
+      {
+        status: 500,
+        schema: PurchasingErrorResponse,
+      },
+    ],
   },
   {
     method: 'get',

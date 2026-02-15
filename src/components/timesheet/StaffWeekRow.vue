@@ -17,11 +17,11 @@
             {{ staff.name }}
           </p>
           <div
-            v-if="payrollMode && staff.total_overtime && (staff.total_overtime as number) > 0"
+            v-if="payrollMode && staff.total_overtime_hours > 0"
             class="flex items-center space-x-1"
           >
             <span class="text-xs lg:text-sm text-orange-600 font-medium">
-              OT: {{ formatHours(staff.total_overtime as number) }}h
+              OT: {{ formatHours(staff.total_overtime_hours) }}h
             </span>
           </div>
         </div>
