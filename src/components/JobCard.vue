@@ -167,13 +167,23 @@
     <div v-if="job.contact_person" class="text-[0.8rem] text-gray-600 truncate font-medium">
       <span class="font-semibold">Contact:</span> {{ job.contact_person }}
     </div>
+
+    <!-- Status icons bottom-right -->
+    <div
+      v-if="job.fully_invoiced || job.paid || job.rejected_flag"
+      class="absolute bottom-1.5 right-1.5 flex items-center gap-1"
+    >
+      <Receipt v-if="job.fully_invoiced" class="w-4 h-4 text-green-600" title="Fully invoiced" />
+      <DollarSign v-if="job.paid" class="w-4 h-4 text-green-600" title="Paid" />
+      <XCircle v-if="job.rejected_flag" class="w-4 h-4 text-red-500" title="Rejected" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { toast } from 'vue-sonner'
-import { Settings2 } from 'lucide-vue-next'
+import { Settings2, Receipt, DollarSign, XCircle } from 'lucide-vue-next'
 import StaffAvatar from '@/components/StaffAvatar.vue'
 import { useJobCard } from '@/composables/useJobCard'
 import { schemas } from '@/api/generated/api'
