@@ -336,10 +336,8 @@ export const useJobsStore = defineStore('jobs', () => {
       job_id: job.id,
       job_number: job.job_number,
       name: job.name,
-      client: {
-        id: job.client_id ?? '',
-        name: job.client_name ?? '',
-      },
+      client_id: job.client_id ?? null,
+      client_name: job.client_name ?? null,
       contact_id: job.contact_id ?? null,
       contact_name: job.contact_name ?? null,
       status: job.job_status as JobHeaderResponse['status'],
@@ -368,7 +366,7 @@ export const useJobsStore = defineStore('jobs', () => {
     // Immutable update to force dependent computeds/watchers to re-run
     headersById.value = {
       ...headersById.value,
-      [jobId]: { ...cur, ...patch, client: patch.client ?? cur.client },
+      [jobId]: { ...cur, ...patch },
     }
   }
 

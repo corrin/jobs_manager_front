@@ -101,7 +101,7 @@
               <div class="space-y-3">
                 <div v-if="!isChangingClient" class="space-y-2">
                   <input
-                    :value="localJobData.client?.name"
+                    :value="localJobData.client_name"
                     type="text"
                     data-automation-id="JobSettingsTab-client-name"
                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-50 text-gray-600"
@@ -177,8 +177,8 @@
                 id="contact"
                 label="Contact Person"
                 :optional="true"
-                :client-id="localJobData.client?.id || ''"
-                :client-name="localJobData.client?.name || ''"
+                :client-id="localJobData.client_id || ''"
+                :client-name="localJobData.client_name || ''"
                 :initial-contact-id="
                   typeof localJobData.contact_id === 'string' ? localJobData.contact_id : undefined
                 "
@@ -301,7 +301,7 @@
     <CreateClientModal
       :is-open="showEditClientModal"
       :edit-mode="true"
-      :client-id="jobData?.client.id || ''"
+      :client-id="jobData?.client_id || ''"
       :client-data="currentClientData"
       @update:is-open="showEditClientModal = $event"
       @client-created="handleClientUpdated"
@@ -646,7 +646,8 @@ watch(
         job_id: props.jobId || '',
         job_number: props.jobNumber ? Number(props.jobNumber) : 0,
         name: '',
-        client: undefined,
+        client_id: null,
+        client_name: null,
         contact_id: undefined,
         contact_name: undefined,
         status: '' as Job['status'],
@@ -670,9 +671,6 @@ watch(
 
       localJobData.value = { ...defaultJobData }
       serverBaseline.value = { ...defaultJobData }
-      // Ensure client is properly typed
-      localJobData.value.client = undefined
-      serverBaseline.value.client = undefined
       contactDisplayValue.value = ''
       return
     }
@@ -685,7 +683,8 @@ watch(
       job_id: newJobData.job_id,
       job_number: Number(newJobData.job_number),
       name: newJobData.name,
-      client: newJobData.client,
+      client_id: newJobData.client_id,
+      client_name: newJobData.client_name,
       status: newJobData.status,
       pricing_methodology: newJobData.pricing_methodology,
       speed_quality_tradeoff: newJobData.speed_quality_tradeoff ?? 'normal',
@@ -716,8 +715,6 @@ watch(
       notes: normalizeNullable(localJobData.value.notes),
       price_cap: localJobData.value.price_cap ?? null,
       default_xero_pay_item_id: localJobData.value.default_xero_pay_item_id ?? null,
-      // Include separated fields for delta consistency (only id fields, not name)
-      client_id: localJobData.value.client?.id ?? null,
       contact_id: localJobData.value.contact_id ?? null,
       contact_name: localJobData.value.contact_name ?? null,
     }
@@ -863,8 +860,6 @@ watch(
       if (basicInfo.notes !== undefined) {
         serverBaseline.value.notes = normalizeNullable(basicInfo.notes ?? null)
       }
-      // Include separated fields for delta consistency (only id fields, not name)
-      serverBaseline.value.client_id = localJobData.value.client?.id ?? null
       serverBaseline.value.contact_id = localJobData.value.contact_id ?? null
       serverBaseline.value.contact_name = localJobData.value.contact_name ?? null
 
@@ -896,7 +891,8 @@ watch(
       // Update local data when header changes (e.g., from inline edits)
       // IMPORTANT: Don't update basic info fields as they're managed separately
       localJobData.value.name = newHeader.name
-      localJobData.value.client = newHeader.client
+      localJobData.value.client_id = newHeader.client_id
+      localJobData.value.client_name = newHeader.client_name
       localJobData.value.status = newHeader.status
       localJobData.value.pricing_methodology = newHeader.pricing_methodology
       localJobData.value.speed_quality_tradeoff = newHeader.speed_quality_tradeoff ?? 'normal'
@@ -952,10 +948,8 @@ const confirmClientChange = () => {
   const clientId = newClientId.value
   const clientName = selectedNewClient.value.name
 
-  localJobData.value.client = {
-    id: clientId,
-    name: clientName,
-  }
+  localJobData.value.client_id = clientId
+  localJobData.value.client_name = clientName
 
   contactDisplayValue.value = ''
 
@@ -969,16 +963,14 @@ const confirmClientChange = () => {
   // Update header immediately for instant reactivity
   if (jobHeader.value) {
     jobsStore.patchHeader(jobHeader.value.job_id, {
-      client: {
-        id: localJobData.value.client?.id ?? '',
-        name: localJobData.value.client?.name ?? '',
-      },
+      client_id: clientId,
+      client_name: clientName,
     })
   }
 }
 
 const editCurrentClient = async () => {
-  if (!jobData.value?.client?.id) {
+  if (!jobData.value?.client_id) {
     debugLog('No current client to edit')
     return
   }
@@ -986,7 +978,7 @@ const editCurrentClient = async () => {
   try {
     // Fetch current client data from API
     const clientDetail = await api.clients_retrieve({
-      params: { client_id: jobData.value.client.id },
+      params: { client_id: jobData.value.client_id },
     })
 
     // Update currentClientData with fetched data
@@ -1007,17 +999,12 @@ const editCurrentClient = async () => {
 
 const handleClientUpdated = (updatedClient: Client) => {
   // Update local job data with new client information
-  if (localJobData.value.client) {
-    localJobData.value.client.name = updatedClient.name
-  }
+  localJobData.value.client_name = updatedClient.name
 
   // Reflect name in header immediately (no API call; backend derives client_name)
   if (jobHeader.value) {
     jobsStore.patchHeader(jobHeader.value.job_id, {
-      client: {
-        id: jobHeader.value.client?.id ?? '',
-        name: updatedClient.name,
-      },
+      client_name: updatedClient.name,
     })
   }
 
@@ -1088,12 +1075,10 @@ const autosave = createJobAutosave({
     // Returns original snapshot, not current data
     const data = serverBaseline.value || {}
     return {
-      id: data.id,
+      job_id: data.job_id,
       job_number: data.job_number,
       name: data.name,
-      client: data.client,
-      // Include separated fields for delta consistency (only id fields, not name)
-      client_id: data.client_id,
+      client_id: data.client_id ?? null,
       contact_id: data.contact_id,
       contact_name: data.contact_name,
       job_status: data.status,
@@ -1145,11 +1130,21 @@ const autosave = createJobAutosave({
 
       if (Object.keys(partialPayload).length === 0) return { success: true }
 
+      // Build before-snapshot mapping header field names to Job field names
+      const beforeSnapshot: Record<string, unknown> = {}
+      for (const key of Object.keys(partialPayload)) {
+        if (key === 'job_status') {
+          beforeSnapshot[key] = serverBaseline.value.status ?? null
+        } else {
+          beforeSnapshot[key] = (serverBaseline.value as Record<string, unknown>)[key]
+        }
+      }
+
       // Use the partial update method with client snapshot for before values
       const result = await jobService.updateJobHeaderPartial(
         props.jobId,
         partialPayload,
-        serverBaseline.value,
+        beforeSnapshot,
       )
       if (!result.success) {
         // Detect concurrency by robust regex (no auto-retry)
@@ -1188,23 +1183,8 @@ const autosave = createJobAutosave({
         if ('quote_acceptance_date' in payload) {
           next.quote_acceptance_date = (payload.quote_acceptance_date as string | null) ?? undefined
         }
-        if ('client_id' in payload || 'client_name' in payload) {
-          const newId =
-            ('client_id' in payload ? (payload.client_id as string | null) : next.client?.id) ??
-            next.client?.id ??
-            ''
-          const newName =
-            ('client_name' in payload
-              ? ((payload.client_name as string | null) ?? '')
-              : undefined) ??
-            localJobData.value.client?.name ??
-            next.client?.name ??
-            ''
-          next.client = {
-            id: newId,
-            name: newName,
-          }
-        }
+        if ('client_id' in payload) next.client_id = payload.client_id as string | null
+        if ('client_name' in payload) next.client_name = payload.client_name as string | null
         if ('description' in payload)
           next.description = (payload.description as string | null) ?? null
         if ('delivery_date' in payload)
@@ -1309,20 +1289,12 @@ const autosave = createJobAutosave({
             serverJobDetail.default_xero_pay_item_name ?? null
         }
         if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
-          nextBaseline.client = {
-            id: serverJobDetail.client_id ?? '',
-            name: serverJobDetail.client_name ?? '',
-          }
           nextBaseline.client_id = serverJobDetail.client_id ?? null
           nextBaseline.client_name = serverJobDetail.client_name ?? null
-          localJobData.value.client = {
-            id: serverJobDetail.client_id ?? '',
-            name: serverJobDetail.client_name ?? '',
-          }
-          headerPatch.client = {
-            id: serverJobDetail.client_id ?? '',
-            name: serverJobDetail.client_name ?? '',
-          }
+          localJobData.value.client_id = serverJobDetail.client_id ?? null
+          localJobData.value.client_name = serverJobDetail.client_name ?? null
+          headerPatch.client_id = serverJobDetail.client_id ?? null
+          headerPatch.client_name = serverJobDetail.client_name ?? null
 
           // Backend auto-sets contact when client changes - update from response
           // This prevents a redundant API call when ContactSelector emits
@@ -1437,11 +1409,12 @@ const autosave = createJobAutosave({
         if (touchedKeys.includes('client_id') || touchedKeys.includes('client_name')) {
           const clientId = coerceNullableString(partialPayload.client_id) ?? ''
           const clientName = coerceNullableString(partialPayload.client_name) ?? ''
-          nextBaseline.client = { id: clientId, name: clientName }
           nextBaseline.client_id = clientId
           nextBaseline.client_name = clientName
-          localJobData.value.client = { id: clientId, name: clientName }
-          headerPatch.client = { id: clientId, name: clientName }
+          localJobData.value.client_id = clientId
+          localJobData.value.client_name = clientName
+          headerPatch.client_id = clientId
+          headerPatch.client_name = clientName
 
           // Note: When no serverJobDetail, we can't get the auto-set contact
           // The ContactSelector will re-fetch contacts for the new client
@@ -1534,7 +1507,8 @@ onMounted(() => {
           job_id: response.job_id,
           job_number: Number(response.job_number),
           name: response.name,
-          client: response.client,
+          client_id: response.client_id,
+          client_name: response.client_name,
           status: response.status,
           pricing_methodology: response.pricing_methodology,
           speed_quality_tradeoff: response.speed_quality_tradeoff ?? 'normal',
@@ -1559,8 +1533,6 @@ onMounted(() => {
           delivery_date: normalizeNullable(localJobData.value.delivery_date),
           order_number: normalizeNullable(localJobData.value.order_number),
           notes: normalizeNullable(localJobData.value.notes),
-          // Include separated fields for delta consistency (only id fields, not name)
-          client_id: localJobData.value.client?.id ?? null,
           contact_id: localJobData.value.contact_id ?? null,
           contact_name: localJobData.value.contact_name ?? null,
         }

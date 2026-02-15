@@ -747,7 +747,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/CompanyDefaultsRequest'
-        required: true
       security:
         - cookieAuth: []
       responses:
@@ -3401,7 +3400,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CostLineCreateUpdate'
+                $ref: '#/components/schemas/CostLine'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
           description: ''
   /job/rest/cost_lines/{cost_line_id}/approve/:
     post:
@@ -3743,11 +3760,29 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CostLineCreateUpdate'
+                $ref: '#/components/schemas/CostLine'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
           description: ''
   /job/rest/jobs/{job_id}/cost_sets/actual/cost_lines/:
     post:
@@ -3777,11 +3812,29 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        '201':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CostLineCreateUpdate'
+                $ref: '#/components/schemas/CostLine'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CostLineErrorResponse'
           description: ''
   /job/rest/jobs/{job_id}/cost_sets/quote/revise/:
     get:
@@ -8059,7 +8112,7 @@ components:
           description: Name of the test client used for testing (e.g., 'ABC Carpet
             Cleaning TEST IGNORE'). This client's name is preserved during data backports.
           maxLength: 255
-        billable_threshold_green:
+        kpi_daily_billable_hours_green:
           type: number
           format: double
           maximum: 1000
@@ -8068,7 +8121,7 @@ components:
           exclusiveMinimum: true
           title: Green Threshold of Billable Hours
           description: Daily billable hours above this threshold are marked in green
-        billable_threshold_amber:
+        kpi_daily_billable_hours_amber:
           type: number
           format: double
           maximum: 1000
@@ -8078,16 +8131,7 @@ components:
           title: Amber Threshold of Billable Hours
           description: Daily billable hours between this threshold and the green threshold
             are marked in amber
-        daily_gp_target:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Daily Goal of Gross Profit
-          description: Daily gross profit goal in dolars
-        shop_hours_target_percentage:
+        kpi_daily_shop_hours_percentage:
           type: number
           format: double
           maximum: 1000
@@ -8096,19 +8140,38 @@ components:
           exclusiveMinimum: true
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
-        job_gp_target_percentage:
+        kpi_daily_gp_green:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Green Threshold of Daily GP
+          description: Daily gross profit above this threshold is marked in green
+        kpi_daily_gp_amber:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Amber Threshold of Daily GP
+          description: Daily gross profit between this threshold and the green threshold
+            is marked in amber
+        kpi_job_gp_target_percentage:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Target GP % per Job
-          description: Target gross profit percentage for jobs
+          title: Job GP Target Percentage
+          description: Target gross profit margin percentage for jobs (used for color
+            coding).  Set by looking at a year's history
       required:
         - company_name
         - created_at
-        - job_gp_target_percentage
         - updated_at
     CompanyDefaultsJobDetail:
       type: object
@@ -8341,7 +8404,7 @@ components:
           description: Name of the test client used for testing (e.g., 'ABC Carpet
             Cleaning TEST IGNORE'). This client's name is preserved during data backports.
           maxLength: 255
-        billable_threshold_green:
+        kpi_daily_billable_hours_green:
           type: number
           format: double
           maximum: 1000
@@ -8350,7 +8413,7 @@ components:
           exclusiveMinimum: true
           title: Green Threshold of Billable Hours
           description: Daily billable hours above this threshold are marked in green
-        billable_threshold_amber:
+        kpi_daily_billable_hours_amber:
           type: number
           format: double
           maximum: 1000
@@ -8360,16 +8423,7 @@ components:
           title: Amber Threshold of Billable Hours
           description: Daily billable hours between this threshold and the green threshold
             are marked in amber
-        daily_gp_target:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Daily Goal of Gross Profit
-          description: Daily gross profit goal in dolars
-        shop_hours_target_percentage:
+        kpi_daily_shop_hours_percentage:
           type: number
           format: double
           maximum: 1000
@@ -8378,17 +8432,35 @@ components:
           exclusiveMinimum: true
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
-        job_gp_target_percentage:
+        kpi_daily_gp_green:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Green Threshold of Daily GP
+          description: Daily gross profit above this threshold is marked in green
+        kpi_daily_gp_amber:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Amber Threshold of Daily GP
+          description: Daily gross profit between this threshold and the green threshold
+            is marked in amber
+        kpi_job_gp_target_percentage:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Target GP % per Job
-          description: Target gross profit percentage for jobs
-      required:
-        - job_gp_target_percentage
+          title: Job GP Target Percentage
+          description: Target gross profit margin percentage for jobs (used for color
+            coding).  Set by looking at a year's history
     CompanyDefaultsSchema:
       type: object
       description: Serializer for the complete schema response.
@@ -8562,66 +8634,6 @@ components:
       oneOf:
         - $ref: '#/components/schemas/StockConsumeResponse'
         - $ref: '#/components/schemas/CostLineApprovalResponse'
-    CostLineCreateUpdate:
-      type: object
-      description: Serializer for CostLine creation and updates - full write capabilities
-      properties:
-        kind:
-          $ref: '#/components/schemas/Kind332Enum'
-        desc:
-          type: string
-          description: Description of this cost line
-          maxLength: 255
-        quantity:
-          type: number
-          format: double
-          maximum: 10000000
-          minimum: -10000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        unit_cost:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        unit_rev:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-        accounting_date:
-          type: string
-          format: date
-          description: The date this cost should be attributed to for accounting purposes
-        ext_refs:
-          type: object
-          additionalProperties: {}
-        meta:
-          type: object
-          additionalProperties: {}
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-        xero_pay_item:
-          type: string
-          format: uuid
-          nullable: true
-          description: The Xero pay item for this time entry (leave type, earnings
-            rate, etc.)
-      required:
-        - accounting_date
-        - created_at
-        - kind
-        - updated_at
     CostLineCreateUpdateRequest:
       type: object
       description: Serializer for CostLine creation and updates - full write capabilities
@@ -9927,18 +9939,6 @@ components:
         - job_name
         - job_number
         - revenue
-    JobClientHeader:
-      type: object
-      description: Serializer for client data in job header response
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-      required:
-        - id
-        - name
     JobContactResponse:
       type: object
       description: Serializer for job contact information response
@@ -10554,8 +10554,15 @@ components:
         job_id:
           type: string
           format: uuid
-        client:
-          $ref: '#/components/schemas/JobClientHeader'
+        client_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        client_name:
+          type: string
+          readOnly: true
+          nullable: true
         contact_id:
           type: string
           format: uuid
@@ -10643,7 +10650,8 @@ components:
           description: Indicates if this job was rejected (shown in Archived with
             rejected styling)
       required:
-        - client
+        - client_id
+        - client_name
         - contact_id
         - contact_name
         - default_xero_pay_item_id
@@ -11377,23 +11385,27 @@ components:
       type: object
       description: Serializer for KPI thresholds
       properties:
-        billable_threshold_green:
+        kpi_daily_billable_hours_green:
           type: number
           format: double
-        billable_threshold_amber:
+        kpi_daily_billable_hours_amber:
           type: number
           format: double
-        daily_gp_target:
+        kpi_daily_gp_green:
           type: number
           format: double
-        shop_hours_target:
+        kpi_daily_gp_amber:
+          type: number
+          format: double
+        kpi_daily_shop_hours_percentage:
           type: number
           format: double
       required:
-        - billable_threshold_amber
-        - billable_threshold_green
-        - daily_gp_target
-        - shop_hours_target
+        - kpi_daily_billable_hours_amber
+        - kpi_daily_billable_hours_green
+        - kpi_daily_gp_amber
+        - kpi_daily_gp_green
+        - kpi_daily_shop_hours_percentage
     KanbanColumnJob:
       type: object
       description: |-
@@ -12396,7 +12408,7 @@ components:
           description: Name of the test client used for testing (e.g., 'ABC Carpet
             Cleaning TEST IGNORE'). This client's name is preserved during data backports.
           maxLength: 255
-        billable_threshold_green:
+        kpi_daily_billable_hours_green:
           type: number
           format: double
           maximum: 1000
@@ -12405,7 +12417,7 @@ components:
           exclusiveMinimum: true
           title: Green Threshold of Billable Hours
           description: Daily billable hours above this threshold are marked in green
-        billable_threshold_amber:
+        kpi_daily_billable_hours_amber:
           type: number
           format: double
           maximum: 1000
@@ -12415,16 +12427,7 @@ components:
           title: Amber Threshold of Billable Hours
           description: Daily billable hours between this threshold and the green threshold
             are marked in amber
-        daily_gp_target:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Daily Goal of Gross Profit
-          description: Daily gross profit goal in dolars
-        shop_hours_target_percentage:
+        kpi_daily_shop_hours_percentage:
           type: number
           format: double
           maximum: 1000
@@ -12433,15 +12436,35 @@ components:
           exclusiveMinimum: true
           title: Hours percentage goal in Shop Jobs
           description: Target percentage of hours worked in shop jobs
-        job_gp_target_percentage:
+        kpi_daily_gp_green:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Green Threshold of Daily GP
+          description: Daily gross profit above this threshold is marked in green
+        kpi_daily_gp_amber:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Amber Threshold of Daily GP
+          description: Daily gross profit between this threshold and the green threshold
+            is marked in amber
+        kpi_job_gp_target_percentage:
           type: number
           format: double
           maximum: 1000
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Target GP % per Job
-          description: Target gross profit percentage for jobs
+          title: Job GP Target Percentage
+          description: Target gross profit margin percentage for jobs (used for color
+            coding).  Set by looking at a year's history
     PatchedCostLineCreateUpdateRequest:
       type: object
       description: Serializer for CostLine creation and updates - full write capabilities
