@@ -18,7 +18,7 @@ type CostLine = z.infer<typeof schemas.CostLine>
 type Staff = z.infer<typeof schemas.ModernStaff>
 type Job = z.infer<typeof schemas.ModernTimesheetJob>
 type WeeklyOverviewData = z.infer<typeof schemas.WeeklyTimesheetData>
-type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdate>
+type CostLineCreateUpdate = z.infer<typeof schemas.CostLineCreateUpdateRequest>
 type PatchedCostLineCreateUpdate = z.infer<typeof schemas.PatchedCostLineCreateUpdateRequest>
 type XeroPayItem = z.infer<typeof schemas.XeroPayItem>
 

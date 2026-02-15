@@ -109,7 +109,7 @@ export function useCostLineAutosave(opts: Options) {
         const key = k as keyof CostLine
         // Only snapshot if we haven't already captured this field
         if (!(key in existingSnap)) {
-          snap[key] = line[key]
+          ;(snap as Record<string, unknown>)[key] = line[key]
         }
       })
       prevSnapshot.set(line, snap)
