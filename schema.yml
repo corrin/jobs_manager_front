@@ -8148,8 +8148,9 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Green Threshold of Billable Hours
-          description: Daily billable hours above this threshold are marked in green
+          title: Daily billable hours (green)
+          description: Daily total billable hours across all staff above which the
+            day is green
         kpi_daily_billable_hours_amber:
           type: number
           format: double
@@ -8157,9 +8158,18 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Amber Threshold of Billable Hours
-          description: Daily billable hours between this threshold and the green threshold
-            are marked in amber
+          title: Daily billable hours (amber)
+          description: Daily total billable hours across all staff above which the
+            day is amber
+        kpi_daily_gp_target:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Daily gross profit target
+          description: Daily gross profit target in dollars
         kpi_daily_shop_hours_percentage:
           type: number
           format: double
@@ -8167,27 +8177,9 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Hours percentage goal in Shop Jobs
-          description: Target percentage of hours worked in shop jobs
-        kpi_daily_gp_green:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Green Threshold of Daily GP
-          description: Daily gross profit above this threshold is marked in green
-        kpi_daily_gp_amber:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Amber Threshold of Daily GP
-          description: Daily gross profit between this threshold and the green threshold
-            is marked in amber
+          title: Daily shop hours percentage target
+          description: Target percentage of daily hours spent on shop (non-billable)
+            jobs
         kpi_job_gp_target_percentage:
           type: number
           format: double
@@ -8195,9 +8187,26 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Job GP Target Percentage
-          description: Target gross profit margin percentage for jobs (used for color
-            coding).  Set by looking at a year's history
+          title: Target GP % per job
+          description: Target gross profit percentage for individual jobs
+        kpi_daily_gp_green:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Daily GP (green)
+          description: Daily gross profit above which the day is green
+        kpi_daily_gp_amber:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Daily GP (amber)
+          description: Daily gross profit above which the day is amber
       required:
         - company_name
         - created_at
@@ -8440,8 +8449,9 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Green Threshold of Billable Hours
-          description: Daily billable hours above this threshold are marked in green
+          title: Daily billable hours (green)
+          description: Daily total billable hours across all staff above which the
+            day is green
         kpi_daily_billable_hours_amber:
           type: number
           format: double
@@ -8449,9 +8459,18 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Amber Threshold of Billable Hours
-          description: Daily billable hours between this threshold and the green threshold
-            are marked in amber
+          title: Daily billable hours (amber)
+          description: Daily total billable hours across all staff above which the
+            day is amber
+        kpi_daily_gp_target:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Daily gross profit target
+          description: Daily gross profit target in dollars
         kpi_daily_shop_hours_percentage:
           type: number
           format: double
@@ -8459,27 +8478,9 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Hours percentage goal in Shop Jobs
-          description: Target percentage of hours worked in shop jobs
-        kpi_daily_gp_green:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Green Threshold of Daily GP
-          description: Daily gross profit above this threshold is marked in green
-        kpi_daily_gp_amber:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Amber Threshold of Daily GP
-          description: Daily gross profit between this threshold and the green threshold
-            is marked in amber
+          title: Daily shop hours percentage target
+          description: Target percentage of daily hours spent on shop (non-billable)
+            jobs
         kpi_job_gp_target_percentage:
           type: number
           format: double
@@ -8487,9 +8488,26 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Job GP Target Percentage
-          description: Target gross profit margin percentage for jobs (used for color
-            coding).  Set by looking at a year's history
+          title: Target GP % per job
+          description: Target gross profit percentage for individual jobs
+        kpi_daily_gp_green:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Daily GP (green)
+          description: Daily gross profit above which the day is green
+        kpi_daily_gp_amber:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Daily GP (amber)
+          description: Daily gross profit above which the day is amber
     CompanyDefaultsSchema:
       type: object
       description: Serializer for the complete schema response.
@@ -11598,6 +11616,8 @@ components:
           type: integer
         elapsed_workdays:
           type: integer
+        active_workdays:
+          type: integer
         remaining_workdays:
           type: integer
         time_revenue:
@@ -11658,6 +11678,7 @@ components:
         color_shop:
           type: string
       required:
+        - active_workdays
         - adjustment_cost
         - adjustment_profit
         - adjustment_revenue
@@ -11721,13 +11742,16 @@ components:
         kpi_daily_billable_hours_amber:
           type: number
           format: double
+        kpi_daily_gp_target:
+          type: number
+          format: double
+        kpi_daily_shop_hours_percentage:
+          type: number
+          format: double
         kpi_daily_gp_green:
           type: number
           format: double
         kpi_daily_gp_amber:
-          type: number
-          format: double
-        kpi_daily_shop_hours_percentage:
           type: number
           format: double
       required:
@@ -11735,6 +11759,7 @@ components:
         - kpi_daily_billable_hours_green
         - kpi_daily_gp_amber
         - kpi_daily_gp_green
+        - kpi_daily_gp_target
         - kpi_daily_shop_hours_percentage
     KanbanColumnJob:
       type: object
@@ -12735,8 +12760,9 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Green Threshold of Billable Hours
-          description: Daily billable hours above this threshold are marked in green
+          title: Daily billable hours (green)
+          description: Daily total billable hours across all staff above which the
+            day is green
         kpi_daily_billable_hours_amber:
           type: number
           format: double
@@ -12744,9 +12770,18 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Amber Threshold of Billable Hours
-          description: Daily billable hours between this threshold and the green threshold
-            are marked in amber
+          title: Daily billable hours (amber)
+          description: Daily total billable hours across all staff above which the
+            day is amber
+        kpi_daily_gp_target:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Daily gross profit target
+          description: Daily gross profit target in dollars
         kpi_daily_shop_hours_percentage:
           type: number
           format: double
@@ -12754,27 +12789,9 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Hours percentage goal in Shop Jobs
-          description: Target percentage of hours worked in shop jobs
-        kpi_daily_gp_green:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Green Threshold of Daily GP
-          description: Daily gross profit above this threshold is marked in green
-        kpi_daily_gp_amber:
-          type: number
-          format: double
-          maximum: 100000000
-          minimum: -100000000
-          exclusiveMaximum: true
-          exclusiveMinimum: true
-          title: Amber Threshold of Daily GP
-          description: Daily gross profit between this threshold and the green threshold
-            is marked in amber
+          title: Daily shop hours percentage target
+          description: Target percentage of daily hours spent on shop (non-billable)
+            jobs
         kpi_job_gp_target_percentage:
           type: number
           format: double
@@ -12782,9 +12799,26 @@ components:
           minimum: -1000
           exclusiveMaximum: true
           exclusiveMinimum: true
-          title: Job GP Target Percentage
-          description: Target gross profit margin percentage for jobs (used for color
-            coding).  Set by looking at a year's history
+          title: Target GP % per job
+          description: Target gross profit percentage for individual jobs
+        kpi_daily_gp_green:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Daily GP (green)
+          description: Daily gross profit above which the day is green
+        kpi_daily_gp_amber:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          title: Daily GP (amber)
+          description: Daily gross profit above which the day is amber
     PatchedCostLineCreateUpdateRequest:
       type: object
       description: Serializer for CostLine creation and updates - full write capabilities

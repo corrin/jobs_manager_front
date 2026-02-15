@@ -61,6 +61,7 @@ const KPIMonthlyTotals = z.object({
   profit_red_days: z.number().int(),
   working_days: z.number().int(),
   elapsed_workdays: z.number().int(),
+  active_workdays: z.number().int(),
   remaining_workdays: z.number().int(),
   time_revenue: z.number(),
   material_revenue: z.number(),
@@ -86,9 +87,10 @@ const KPIMonthlyTotals = z.object({
 const KPIThresholds = z.object({
   kpi_daily_billable_hours_green: z.number(),
   kpi_daily_billable_hours_amber: z.number(),
+  kpi_daily_gp_target: z.number(),
+  kpi_daily_shop_hours_percentage: z.number(),
   kpi_daily_gp_green: z.number(),
   kpi_daily_gp_amber: z.number(),
-  kpi_daily_shop_hours_percentage: z.number(),
 })
 const KPICalendarData = z.object({
   calendar_data: z.record(KPIDayData),
@@ -367,10 +369,11 @@ const CompanyDefaults = z.object({
   test_client_name: z.string().max(255).nullish(),
   kpi_daily_billable_hours_green: z.number().gt(-1000).lt(1000).optional(),
   kpi_daily_billable_hours_amber: z.number().gt(-1000).lt(1000).optional(),
+  kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000).optional(),
   kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000).optional(),
+  kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000).optional(),
   kpi_daily_gp_green: z.number().gt(-100000000).lt(100000000).optional(),
   kpi_daily_gp_amber: z.number().gt(-100000000).lt(100000000).optional(),
-  kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000).optional(),
 })
 const CompanyDefaultsRequest = z
   .object({
@@ -417,10 +420,11 @@ const CompanyDefaultsRequest = z
     test_client_name: z.string().max(255).nullable(),
     kpi_daily_billable_hours_green: z.number().gt(-1000).lt(1000),
     kpi_daily_billable_hours_amber: z.number().gt(-1000).lt(1000),
+    kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000),
     kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000),
+    kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000),
     kpi_daily_gp_green: z.number().gt(-100000000).lt(100000000),
     kpi_daily_gp_amber: z.number().gt(-100000000).lt(100000000),
-    kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000),
   })
   .partial()
 const PatchedCompanyDefaultsRequest = z
@@ -468,10 +472,11 @@ const PatchedCompanyDefaultsRequest = z
     test_client_name: z.string().max(255).nullable(),
     kpi_daily_billable_hours_green: z.number().gt(-1000).lt(1000),
     kpi_daily_billable_hours_amber: z.number().gt(-1000).lt(1000),
+    kpi_daily_gp_target: z.number().gt(-100000000).lt(100000000),
     kpi_daily_shop_hours_percentage: z.number().gt(-1000).lt(1000),
+    kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000),
     kpi_daily_gp_green: z.number().gt(-100000000).lt(100000000),
     kpi_daily_gp_amber: z.number().gt(-100000000).lt(100000000),
-    kpi_job_gp_target_percentage: z.number().gt(-1000).lt(1000),
   })
   .partial()
 const SettingsField = z.object({
