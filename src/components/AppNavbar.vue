@@ -726,6 +726,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { useDebounceFn } from '@vueuse/core'
 import { useRouter, useRoute } from 'vue-router'
 import {
   ChevronDown,
@@ -772,6 +773,16 @@ const submitSearch = () => {
     router.push({ path: '/kanban', query: q ? { q } : {} })
   }
 }
+
+const debouncedSubmitSearch = useDebounceFn(() => {
+  if (route.path === '/kanban') {
+    submitSearch()
+  }
+}, 300)
+
+watch(searchInput, () => {
+  debouncedSubmitSearch()
+})
 
 const openAdvancedSearch = () => {
   const query: Record<string, string> = { advanced: '1' }

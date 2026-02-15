@@ -7,8 +7,8 @@
             {{ normalizedStatus.label }}
           </h3>
           <div class="group relative" :title="normalizedStatus.tooltip">
-            <span class="w-4 h-4 text-gray-400 hover:text-gray-600 font-bold text-sm">
-              ({{ jobs.length }})
+            <span class="text-gray-400 hover:text-gray-600 font-bold text-sm">
+              ({{ jobCountDisplay }})
             </span>
           </div>
         </div>
@@ -163,6 +163,9 @@ interface KanbanColumnProps {
   isJobSelectedForMovement?: (jobId: string) => boolean
   mobileSelectedStaffId?: string | null
   enableTapAssign?: boolean
+  hasMore?: boolean
+  total?: number | null
+  columnJobCount?: number | null
 }
 
 interface KanbanColumnEmits {
@@ -186,6 +189,21 @@ const props = withDefaults(defineProps<KanbanColumnProps>(), {
   isJobSelectedForMovement: () => false,
   mobileSelectedStaffId: null,
   enableTapAssign: false,
+  hasMore: false,
+  total: null,
+  columnJobCount: null,
+})
+
+const jobCountDisplay = computed(() => {
+  // When search is active: show "X of Y" where Y is loaded column count
+  if (props.columnJobCount != null && props.jobs.length !== props.columnJobCount) {
+    return `${props.jobs.length} of ${props.columnJobCount.toLocaleString()}`
+  }
+  // When column is truncated: show "X of Y" where Y is total from API
+  if (props.hasMore && props.total != null) {
+    return `${props.jobs.length} of ${props.total.toLocaleString()}`
+  }
+  return String(props.jobs.length)
 })
 
 // Normalize status to handle both string and object formats
