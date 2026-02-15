@@ -9,8 +9,9 @@ import type { z } from 'zod'
 import type { SpeedQuality } from '@/composables/useWorkshopJob'
 
 type Job = z.infer<typeof schemas.Job>
+type JobSummary = z.infer<typeof schemas.JobSummary>
 interface Props {
-  job: Job | null
+  job: Job | JobSummary | null
   speedQuality: SpeedQuality | null
   jobId: string
 }

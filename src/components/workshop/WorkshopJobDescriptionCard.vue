@@ -5,9 +5,10 @@ import { FileText } from 'lucide-vue-next'
 import type { z } from 'zod'
 
 type Job = z.infer<typeof schemas.Job>
+type JobSummary = z.infer<typeof schemas.JobSummary>
 
 interface Props {
-  job: Job
+  job: Job | JobSummary
 }
 
 defineProps<Props>()

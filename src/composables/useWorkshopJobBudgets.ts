@@ -6,9 +6,10 @@ import { formatHoursValue } from '@/composables/useWorkshopTimesheetTimeUtils'
 import type { z } from 'zod'
 
 type Job = z.infer<typeof schemas.Job>
+type JobSummary = z.infer<typeof schemas.JobSummary>
 
 export type JobBudgetMeta = {
-  job: Job
+  job: Job | JobSummary
   estimatedHours: number
   actualHours: number
   overBudget: boolean
@@ -51,7 +52,7 @@ export function useWorkshopJobBudgets(selectedJobIds: ComputedRef<string[]>) {
       const results = await Promise.all(
         jobIds.map(async (jobId) => {
           try {
-            const response = await jobService.getJob(jobId)
+            const response = await jobService.getJobSummary(jobId)
             const job = response.data.job
             const estimatedHours = Math.max(0, getEstimatedHours(job) || 0)
             const actualHours = Math.max(0, getActualHours(job) || 0)

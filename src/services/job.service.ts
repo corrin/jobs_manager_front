@@ -54,7 +54,7 @@ async function updateJobHeaderPartial(
         jobId,
         keys,
       })
-      const currentJob = await api.getFullJob({ params: { job_id: jobId } })
+      const currentJob = await api.getJobSummary({ params: { job_id: jobId } })
 
       for (const field of keys) {
         switch (field) {
@@ -160,6 +160,7 @@ export type JobCreateData = z.infer<typeof schemas.JobCreateRequest>
 type JobDetailResponse = z.infer<typeof schemas.JobDetailResponse>
 type JobCreateResponse = z.infer<typeof schemas.JobCreateResponse>
 type JobDeleteResponse = z.infer<typeof schemas.JobDeleteResponse>
+type JobSummaryResponse = z.infer<typeof schemas.JobSummaryResponse>
 type QuoteImportStatusResponse = z.infer<typeof schemas.QuoteImportStatusResponse>
 type JobStatusUpdateResponse = z.infer<typeof schemas.KanbanSuccessResponse>
 type ArchiveJobsRequest = z.infer<typeof schemas.ArchiveJobsRequest>
@@ -225,6 +226,10 @@ export const jobService = {
 
   getJob(jobId: string): Promise<JobDetailResponse> {
     return api.getFullJob({ params: { job_id: jobId } })
+  },
+
+  getJobSummary(jobId: string): Promise<JobSummaryResponse> {
+    return api.getJobSummary({ params: { job_id: jobId } })
   },
 
   deleteJob(jobId: string): Promise<{ success: boolean; error?: string; message?: string }> {

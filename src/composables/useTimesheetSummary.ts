@@ -7,7 +7,7 @@ import { debugLog } from '@/utils/debug'
 import { getJobActualHours, getJobEstimatedHours } from '@/utils/costLineMeta'
 
 type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
-type FullJob = z.infer<typeof schemas.Job>
+type FullJob = z.infer<typeof schemas.Job> | z.infer<typeof schemas.JobSummary>
 
 export function useTimesheetSummary() {
   const router = useRouter()

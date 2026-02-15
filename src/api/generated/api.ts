@@ -1041,10 +1041,10 @@ const PatchedWorkshopTimesheetEntryUpdateRequest = z
   })
   .partial()
 const WorkshopPDFResponse = z.object({ status: z.string(), message: z.string() }).partial()
-const Kind332Enum = z.enum(['time', 'material', 'adjust'])
+const CostLineKindEnum = z.enum(['time', 'material', 'adjust'])
 const PatchedCostLineCreateUpdateRequest = z
   .object({
-    kind: Kind332Enum,
+    kind: CostLineKindEnum,
     desc: z.string().max(255),
     quantity: z.number().gt(-10000000).lt(10000000),
     unit_cost: z.number().gt(-100000000).lt(100000000),
@@ -1057,7 +1057,7 @@ const PatchedCostLineCreateUpdateRequest = z
   .partial()
 const CostLine = z.object({
   id: z.string().uuid(),
-  kind: Kind332Enum,
+  kind: CostLineKindEnum,
   desc: z.string().max(255).optional(),
   quantity: z.number().gt(-10000000).lt(10000000).optional(),
   unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
@@ -1208,22 +1208,22 @@ const QuoteSpreadsheet = z.object({
   job_number: z.number().int(),
   job_name: z.string(),
 })
-const Status7aeEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
+const QuoteStatusEnum = z.enum(['DRAFT', 'SENT', 'DECLINED', 'ACCEPTED', 'INVOICED', 'DELETED'])
 const Quote = z.object({
   id: z.string().uuid(),
   xero_id: z.string().uuid(),
-  status: Status7aeEnum.optional(),
+  status: QuoteStatusEnum.optional(),
   date: z.string(),
   total_excl_tax: z.number(),
   total_incl_tax: z.number(),
   online_url: z.string().max(200).url().nullish(),
 })
-const Status1beEnum = z.enum(['DRAFT', 'SUBMITTED', 'AUTHORISED', 'DELETED', 'VOIDED', 'PAID'])
+const InvoiceStatusEnum = z.enum(['DRAFT', 'SUBMITTED', 'AUTHORISED', 'DELETED', 'VOIDED', 'PAID'])
 const Invoice = z.object({
   id: z.string().uuid(),
   xero_id: z.string().uuid(),
   number: z.string().max(255),
-  status: Status1beEnum.optional(),
+  status: InvoiceStatusEnum.optional(),
   date: z.string(),
   due_date: z.string().nullish(),
   total_excl_tax: z.number(),
@@ -1234,13 +1234,13 @@ const Invoice = z.object({
 })
 const XeroQuote = z
   .object({
-    status: Status7aeEnum,
+    status: QuoteStatusEnum,
     online_url: z.string().max(200).url().nullable(),
   })
   .partial()
 const XeroInvoice = z.object({
   number: z.string().max(255),
-  status: Status1beEnum.optional(),
+  status: InvoiceStatusEnum.optional(),
   online_url: z.string().max(200).url().nullish(),
 })
 const Job = z.object({
@@ -1340,7 +1340,7 @@ const JobBasicInformationResponse = z.object({
   notes: z.string().nullable(),
 })
 const CostLineCreateUpdateRequest = z.object({
-  kind: Kind332Enum,
+  kind: CostLineKindEnum,
   desc: z.string().max(255).optional(),
   quantity: z.number().gt(-10000000).lt(10000000).optional(),
   unit_cost: z.number().gt(-100000000).lt(100000000).optional(),
@@ -1446,7 +1446,7 @@ const JobFileThumbnailErrorResponse = z.object({
   status: z.string().optional().default('error'),
   message: z.string(),
 })
-const Status7b9Enum = z.enum([
+const JobStatusEnum = z.enum([
   'draft',
   'awaiting_approval',
   'approved',
@@ -1468,7 +1468,7 @@ const JobHeaderResponse = z.object({
   job_number: z.number().int().gte(-2147483648).lte(2147483647),
   name: z.string().max(100),
   description: z.string().nullish(),
-  status: Status7b9Enum.optional(),
+  status: JobStatusEnum.optional(),
   order_number: z.string().max(100).nullish(),
   delivery_date: z.string().nullish(),
   notes: z.string().nullish(),
@@ -1527,6 +1527,62 @@ const QuoteImportStatusResponse = z.object({
   revision: z.number().int().optional(),
   created: z.string().datetime({ offset: true }).optional(),
   summary: z.unknown().optional(),
+})
+const CostSetSummaryOnly = z.object({
+  id: z.string(),
+  job: z.string().uuid(),
+  kind: CostSetKindEnum,
+  rev: z.number().int(),
+  summary: CostSetSummary,
+  created: z.string().datetime({ offset: true }),
+  cost_lines: z.array(z.unknown()),
+})
+const JobSummary = z.object({
+  id: z.string().uuid(),
+  name: z.string().max(100),
+  client_id: z.string().uuid().nullish(),
+  client_name: z.string().nullable(),
+  contact_id: z.string().uuid().nullish(),
+  contact_name: z.string().nullable(),
+  job_number: z.number().int().gte(-2147483648).lte(2147483647),
+  notes: z.string().nullish(),
+  order_number: z.string().max(100).nullish(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+  description: z.string().nullish(),
+  latest_estimate: CostSetSummaryOnly,
+  latest_quote: CostSetSummaryOnly,
+  latest_actual: CostSetSummaryOnly,
+  job_status: z.string(),
+  delivery_date: z.string().nullish(),
+  paid: z.boolean().optional(),
+  quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
+  job_is_valid: z.boolean().optional(),
+  job_files: z.array(JobFile).optional(),
+  charge_out_rate: z.number().gt(-100000000).lt(100000000),
+  pricing_methodology: PricingMethodologyEnum.optional(),
+  price_cap: z.number().gt(-100000000).lt(100000000).nullish(),
+  speed_quality_tradeoff: SpeedQualityTradeoffEnum.optional(),
+  quote_sheet: QuoteSpreadsheet.nullable(),
+  quoted: z.boolean(),
+  fully_invoiced: z.boolean(),
+  quote: Quote.nullable(),
+  invoices: z.array(Invoice),
+  xero_quote: XeroQuote.nullable(),
+  xero_invoices: z.array(XeroInvoice),
+  shop_job: z.boolean(),
+  rejected_flag: z.boolean().optional(),
+  default_xero_pay_item_id: z.string().uuid().nullish(),
+  default_xero_pay_item_name: z.string().nullable(),
+})
+const JobSummaryData = z.object({
+  job: JobSummary,
+  events: z.array(JobEvent),
+  company_defaults: CompanyDefaultsJobDetail,
+})
+const JobSummaryResponse = z.object({
+  success: z.boolean().optional().default(true),
+  data: JobSummaryData,
 })
 const TimelineEntry = z.object({
   id: z.string().uuid(),
@@ -1805,7 +1861,7 @@ const SWPGenerateRequestRequest = z.object({
 })
 const TimesheetCostLine = z.object({
   id: z.string().uuid(),
-  kind: Kind332Enum,
+  kind: CostLineKindEnum,
   desc: z.string(),
   quantity: z.number().gt(-10000000).lt(10000000),
   unit_cost: z.number().gt(-100000000).lt(100000000),
@@ -1882,7 +1938,7 @@ const JobForPurchasing = z.object({
   job_number: z.number().int().gte(-2147483648).lte(2147483647),
   name: z.string().max(100),
   client_name: z.string(),
-  status: Status7b9Enum.optional(),
+  status: JobStatusEnum.optional(),
   is_stock_holding: z.boolean(),
   job_display_name: z.string(),
 })
@@ -2119,9 +2175,9 @@ const PurchaseOrderUpdate = z
     lines: z.array(PurchaseOrderLineUpdate),
   })
   .partial()
-const TypeC98Enum = z.enum(['stock', 'job'])
+const AllocationTypeEnum = z.enum(['job', 'stock'])
 const AllocationItem = z.object({
-  type: TypeC98Enum,
+  type: AllocationTypeEnum,
   job_id: z.string().uuid(),
   job_name: z.string(),
   quantity: z.number(),
@@ -2139,7 +2195,7 @@ const PurchaseOrderAllocationsResponse = z.object({
   allocations: z.record(z.array(AllocationItem)),
 })
 const AllocationDetailsResponse = z.object({
-  type: TypeC98Enum,
+  type: AllocationTypeEnum,
   id: z.string().uuid(),
   description: z.string(),
   quantity: z.number(),
@@ -2179,7 +2235,6 @@ const PurchaseOrderEventCreateResponse = z.object({
   success: z.boolean(),
   event: PurchaseOrderEvent,
 })
-const AllocationTypeEnum = z.enum(['job', 'stock'])
 const AllocationDeleteRequest = z.object({
   allocation_type: AllocationTypeEnum,
   allocation_id: z.string().uuid(),
@@ -2366,7 +2421,7 @@ const ModernTimesheetJob = z.object({
   job_number: z.number().int().gte(-2147483648).lte(2147483647),
   name: z.string().max(100),
   client_name: z.string().nullable(),
-  status: Status7b9Enum.optional(),
+  status: JobStatusEnum.optional(),
   charge_out_rate: z.number().gt(-100000000).lt(100000000),
   has_actual_costset: z.boolean(),
   leave_type: z.string().nullable(),
@@ -2625,7 +2680,7 @@ export const schemas = {
   WorkshopTimesheetEntryRequestRequest,
   PatchedWorkshopTimesheetEntryUpdateRequest,
   WorkshopPDFResponse,
-  Kind332Enum,
+  CostLineKindEnum,
   PatchedCostLineCreateUpdateRequest,
   CostLine,
   CostLineErrorResponse,
@@ -2651,9 +2706,9 @@ export const schemas = {
   PricingMethodologyEnum,
   SpeedQualityTradeoffEnum,
   QuoteSpreadsheet,
-  Status7aeEnum,
+  QuoteStatusEnum,
   Quote,
-  Status1beEnum,
+  InvoiceStatusEnum,
   Invoice,
   XeroQuote,
   XeroInvoice,
@@ -2684,7 +2739,7 @@ export const schemas = {
   JobFileRequest,
   JobFileUpdateSuccessResponse,
   JobFileThumbnailErrorResponse,
-  Status7b9Enum,
+  JobStatusEnum,
   JobHeaderResponse,
   JobInvoicesResponse,
   DocumentTypeEnum,
@@ -2693,6 +2748,10 @@ export const schemas = {
   JobQuoteAcceptanceRequest,
   JobQuoteAcceptance,
   QuoteImportStatusResponse,
+  CostSetSummaryOnly,
+  JobSummary,
+  JobSummaryData,
+  JobSummaryResponse,
   TimelineEntry,
   JobTimelineResponse,
   JobUndoRequest,
@@ -2772,7 +2831,7 @@ export const schemas = {
   PatchedPurchaseOrderUpdateRequest,
   PurchaseOrderLineUpdate,
   PurchaseOrderUpdate,
-  TypeC98Enum,
+  AllocationTypeEnum,
   AllocationItem,
   PurchaseOrderAllocationsResponse,
   AllocationDetailsResponse,
@@ -2782,7 +2841,6 @@ export const schemas = {
   PurchaseOrderEventsResponse,
   PurchaseOrderEventCreateRequest,
   PurchaseOrderEventCreateResponse,
-  AllocationTypeEnum,
   AllocationDeleteRequest,
   AllocationDeleteResponse,
   PurchaseOrderLastNumberResponse,
@@ -5997,6 +6055,27 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
       },
     ],
     response: QuoteImportStatusResponse,
+  },
+  {
+    method: 'get',
+    path: '/job/rest/jobs/:job_id/summary/',
+    alias: 'getJobSummary',
+    description: `Fetch job summary with cost set totals but no individual cost lines or events.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: JobSummaryResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({ error: z.string() }),
+      },
+    ],
   },
   {
     method: 'get',

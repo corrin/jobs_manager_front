@@ -6,6 +6,7 @@ import DOMPurify from 'dompurify'
 import type { z } from 'zod'
 
 type Job = z.infer<typeof schemas.Job>
+type JobSummary = z.infer<typeof schemas.JobSummary>
 
 export type SpeedQuality = {
   key: 'fast' | 'quality' | 'normal'
@@ -14,7 +15,7 @@ export type SpeedQuality = {
 }
 
 export function useWorkshopJob(jobId: Ref<string>) {
-  const job = ref<Job | null>(null)
+  const job = ref<Job | JobSummary | null>(null)
   const loading = ref(false)
 
   const notesHtml = computed(() => {
@@ -65,7 +66,7 @@ export function useWorkshopJob(jobId: Ref<string>) {
     if (!jobId.value) return
     loading.value = true
     try {
-      const response = await jobService.getJob(jobId.value)
+      const response = await jobService.getJobSummary(jobId.value)
       job.value = response.data.job
     } catch (error) {
       console.error('Failed to load workshop job:', error)

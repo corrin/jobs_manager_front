@@ -150,7 +150,7 @@ import { schemas } from '../api/generated/api'
 import { z } from 'zod'
 
 type KanbanJob = z.infer<typeof schemas.KanbanJob>
-type StatusChoice = z.infer<typeof schemas.Status7b9Enum>
+type StatusChoice = z.infer<typeof schemas.JobStatusEnum>
 
 interface KanbanColumnProps {
   status: StatusChoice | { key: string; label: string; tooltip?: string }

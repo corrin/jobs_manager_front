@@ -608,11 +608,12 @@ type ModernTimesheetJob = z.infer<typeof schemas.ModernTimesheetJob>
 type Staff = z.infer<typeof schemas.ModernStaff>
 type TimesheetCostLine = z.infer<typeof schemas.TimesheetCostLine>
 type Job = z.infer<typeof schemas.Job>
+type JobSummary = z.infer<typeof schemas.JobSummary>
 
 type TimesheetEntryViewRow = TimesheetEntryWithMeta
 
 type ActiveJobWithData = {
-  job: Job | ModernTimesheetJob
+  job: Job | JobSummary | ModernTimesheetJob
   actualHours: number
   estimatedHours: number
   totalBill: number
@@ -620,7 +621,7 @@ type ActiveJobWithData = {
   isOverBudget: boolean
 }
 
-const resolveJobStatus = (job: Job | ModernTimesheetJob): string => {
+const resolveJobStatus = (job: Job | JobSummary | ModernTimesheetJob): string => {
   if ('job_status' in job && typeof job.job_status === 'string' && job.job_status) {
     return job.job_status
   }
@@ -815,7 +816,7 @@ const getJobHours = (jobId: string, timeEntries: TimesheetEntryViewRow[]) => {
 }
 
 // Enhanced jobs state for job details with full data
-const enhancedJobs = ref<Map<string, Job>>(new Map())
+const enhancedJobs = ref<Map<string, Job | JobSummary>>(new Map())
 
 // Function to load enhanced job data ONLY for jobs with timesheet entries
 const loadEnhancedJobData = async (jobIds: string[]) => {
@@ -837,8 +838,8 @@ const loadEnhancedJobData = async (jobIds: string[]) => {
     // Load all jobs in parallel instead of sequentially
     const results = await Promise.allSettled(
       jobsToLoad.map(async (jobId) => {
-        const fullJobResponse = await jobService.getJob(jobId)
-        return { jobId, job: fullJobResponse.data.job }
+        const summaryResponse = await jobService.getJobSummary(jobId)
+        return { jobId, job: summaryResponse.data.job }
       }),
     )
 

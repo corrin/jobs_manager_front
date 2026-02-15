@@ -4533,6 +4533,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/QuoteImportStatusResponse'
           description: ''
+  /job/rest/jobs/{job_id}/summary/:
+    get:
+      operationId: getJobSummary
+      description: Fetch job summary with cost set totals but no individual cost lines
+        or events.
+      parameters:
+        - in: path
+          name: job_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - Jobs
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobSummaryResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobRestErrorResponse'
+          description: ''
   /job/rest/jobs/{job_id}/timeline/:
     get:
       operationId: job_rest_jobs_timeline_retrieve
@@ -7003,7 +7032,7 @@ components:
       description: Serializer for allocation details response
       properties:
         type:
-          $ref: '#/components/schemas/TypeC98Enum'
+          $ref: '#/components/schemas/AllocationTypeEnum'
         id:
           type: string
           format: uuid
@@ -7038,7 +7067,7 @@ components:
       description: Serializer for individual allocation items (job or stock).
       properties:
         type:
-          $ref: '#/components/schemas/TypeC98Enum'
+          $ref: '#/components/schemas/AllocationTypeEnum'
         job_id:
           type: string
           format: uuid
@@ -8531,7 +8560,7 @@ components:
           format: uuid
           readOnly: true
         kind:
-          $ref: '#/components/schemas/Kind332Enum'
+          $ref: '#/components/schemas/CostLineKindEnum'
         desc:
           type: string
           description: Description of this cost line
@@ -8639,7 +8668,7 @@ components:
       description: Serializer for CostLine creation and updates - full write capabilities
       properties:
         kind:
-          $ref: '#/components/schemas/Kind332Enum'
+          $ref: '#/components/schemas/CostLineKindEnum'
         desc:
           type: string
           description: Description of this cost line
@@ -8692,12 +8721,22 @@ components:
           type: string
       required:
         - error
+    CostLineKindEnum:
+      enum:
+        - time
+        - material
+        - adjust
+      type: string
+      description: |-
+        * `time` - Time
+        * `material` - Material
+        * `adjust` - Adjustment
     CostLineRequest:
       type: object
       description: Serializer for CostLine model - read-only with basic depth
       properties:
         kind:
-          $ref: '#/components/schemas/Kind332Enum'
+          $ref: '#/components/schemas/CostLineKindEnum'
         desc:
           type: string
           description: Description of this cost line
@@ -8860,6 +8899,49 @@ components:
         - hours
         - profitMargin
         - rev
+    CostSetSummaryOnly:
+      type: object
+      description: |-
+        CostSet serializer that includes summary but omits cost lines.
+
+        Subclasses CostSetSerializer so the schema reuses the same component
+        (no duplicate enum for the ``kind`` field). Only overrides cost_lines
+        to return an empty list.
+      properties:
+        id:
+          type: string
+          readOnly: true
+        job:
+          type: string
+          format: uuid
+          readOnly: true
+        kind:
+          allOf:
+            - $ref: '#/components/schemas/CostSetKindEnum'
+          readOnly: true
+        rev:
+          type: integer
+          readOnly: true
+        summary:
+          allOf:
+            - $ref: '#/components/schemas/CostSetSummary'
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+          readOnly: true
+        cost_lines:
+          type: array
+          items: {}
+          readOnly: true
+      required:
+        - cost_lines
+        - created
+        - id
+        - job
+        - kind
+        - rev
+        - summary
     CreatePayRunRequest:
       type: object
       description: Request serializer for creating a pay run
@@ -9583,7 +9665,7 @@ components:
           type: string
           maxLength: 255
         status:
-          $ref: '#/components/schemas/Status1beEnum'
+          $ref: '#/components/schemas/InvoiceStatusEnum'
         date:
           type: string
           format: date
@@ -9616,6 +9698,22 @@ components:
         - total_excl_tax
         - total_incl_tax
         - xero_id
+    InvoiceStatusEnum:
+      enum:
+        - DRAFT
+        - SUBMITTED
+        - AUTHORISED
+        - DELETED
+        - VOIDED
+        - PAID
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `SUBMITTED` - Submitted
+        * `AUTHORISED` - Authorised
+        * `DELETED` - Deleted
+        * `VOIDED` - Voided
+        * `PAID` - Paid
     Job:
       type: object
       properties:
@@ -10532,7 +10630,7 @@ components:
           type: string
           readOnly: true
         status:
-          $ref: '#/components/schemas/Status7b9Enum'
+          $ref: '#/components/schemas/JobStatusEnum'
         is_stock_holding:
           type: boolean
           readOnly: true
@@ -10595,7 +10693,7 @@ components:
           nullable: true
           description: This becomes the first line item on the invoice
         status:
-          $ref: '#/components/schemas/Status7b9Enum'
+          $ref: '#/components/schemas/JobStatusEnum'
         order_number:
           type: string
           nullable: true
@@ -11025,6 +11123,26 @@ components:
           additionalProperties: {}
       required:
         - statuses
+    JobStatusEnum:
+      enum:
+        - draft
+        - awaiting_approval
+        - approved
+        - in_progress
+        - unusual
+        - recently_completed
+        - special
+        - archived
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `awaiting_approval` - Awaiting Approval
+        * `approved` - Approved
+        * `in_progress` - In Progress
+        * `unusual` - Unusual
+        * `recently_completed` - Recently Completed
+        * `special` - Special
+        * `archived` - Archived
     JobStatusUpdateRequest:
       type: object
       description: Serializer for job status update request data.
@@ -11035,6 +11153,218 @@ components:
           description: New status for the job
       required:
         - status
+    JobSummary:
+      type: object
+      description: Job serializer with cost set summaries only (no cost lines).
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        client_id:
+          type: string
+          format: uuid
+          nullable: true
+        client_name:
+          type: string
+          readOnly: true
+          nullable: true
+        contact_id:
+          type: string
+          format: uuid
+          nullable: true
+        contact_name:
+          type: string
+          readOnly: true
+          nullable: true
+        job_number:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        notes:
+          type: string
+          nullable: true
+          description: Internal notes about the job. Not shown on the invoice.
+        order_number:
+          type: string
+          nullable: true
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        description:
+          type: string
+          nullable: true
+          description: This becomes the first line item on the invoice
+        latest_estimate:
+          allOf:
+            - $ref: '#/components/schemas/CostSetSummaryOnly'
+          readOnly: true
+        latest_quote:
+          allOf:
+            - $ref: '#/components/schemas/CostSetSummaryOnly'
+          readOnly: true
+        latest_actual:
+          allOf:
+            - $ref: '#/components/schemas/CostSetSummaryOnly'
+          readOnly: true
+        job_status:
+          type: string
+        delivery_date:
+          type: string
+          format: date
+          nullable: true
+        paid:
+          type: boolean
+        quote_acceptance_date:
+          type: string
+          format: date-time
+          nullable: true
+        job_is_valid:
+          type: boolean
+        job_files:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobFile'
+        charge_out_rate:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+        pricing_methodology:
+          allOf:
+            - $ref: '#/components/schemas/PricingMethodologyEnum'
+          description: |-
+            Determines whether job uses quotes or time and materials pricing type.
+
+            * `time_materials` - Time & Materials
+            * `fixed_price` - Fixed Price
+        price_cap:
+          type: number
+          format: double
+          maximum: 100000000
+          minimum: -100000000
+          exclusiveMaximum: true
+          exclusiveMinimum: true
+          nullable: true
+          description: Maximum amount to invoice for T&M jobs (do not exceed). For
+            quoted jobs it is set to the quote.
+        speed_quality_tradeoff:
+          allOf:
+            - $ref: '#/components/schemas/SpeedQualityTradeoffEnum'
+          description: |-
+            Speed vs quality tradeoff for workshop execution
+
+            * `fast` - Fast - Prioritize Speed
+            * `normal` - Normal - Balanced
+            * `quality` - Quality - Prioritize Quality
+        quote_sheet:
+          allOf:
+            - $ref: '#/components/schemas/QuoteSpreadsheet'
+          readOnly: true
+          nullable: true
+        quoted:
+          type: boolean
+          readOnly: true
+        fully_invoiced:
+          type: boolean
+          readOnly: true
+        quote:
+          allOf:
+            - $ref: '#/components/schemas/Quote'
+          nullable: true
+          readOnly: true
+        invoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Invoice'
+          readOnly: true
+        xero_quote:
+          allOf:
+            - $ref: '#/components/schemas/XeroQuote'
+          nullable: true
+          readOnly: true
+        xero_invoices:
+          type: array
+          items:
+            $ref: '#/components/schemas/XeroInvoice'
+          readOnly: true
+        shop_job:
+          type: boolean
+          description: Indicates if this is a shop job (belongs to shop client).
+          readOnly: true
+        rejected_flag:
+          type: boolean
+          description: Indicates if this job was rejected (shown in Archived with
+            rejected styling)
+        default_xero_pay_item_id:
+          type: string
+          format: uuid
+          nullable: true
+        default_xero_pay_item_name:
+          type: string
+          readOnly: true
+          nullable: true
+      required:
+        - charge_out_rate
+        - client_name
+        - contact_name
+        - created_at
+        - default_xero_pay_item_name
+        - fully_invoiced
+        - id
+        - invoices
+        - job_number
+        - job_status
+        - latest_actual
+        - latest_estimate
+        - latest_quote
+        - name
+        - quote
+        - quote_sheet
+        - quoted
+        - shop_job
+        - updated_at
+        - xero_invoices
+        - xero_quote
+    JobSummaryData:
+      type: object
+      properties:
+        job:
+          $ref: '#/components/schemas/JobSummary'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobEvent'
+          readOnly: true
+        company_defaults:
+          allOf:
+            - $ref: '#/components/schemas/CompanyDefaultsJobDetail'
+          readOnly: true
+      required:
+        - company_defaults
+        - events
+        - job
+    JobSummaryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          default: true
+        data:
+          $ref: '#/components/schemas/JobSummaryData'
+      required:
+        - data
     JobTimelineResponse:
       type: object
       description: Serializer for job timeline response (events + cost lines)
@@ -11607,16 +11937,6 @@ components:
           type: string
       required:
         - message
-    Kind332Enum:
-      enum:
-        - time
-        - material
-        - adjust
-      type: string
-      description: |-
-        * `time` - Time
-        * `material` - Material
-        * `adjust` - Adjustment
     LinkQuoteSheet:
       type: object
       description: Serializer for link quote sheet request data.
@@ -11815,7 +12135,7 @@ components:
           readOnly: true
           nullable: true
         status:
-          $ref: '#/components/schemas/Status7b9Enum'
+          $ref: '#/components/schemas/JobStatusEnum'
         charge_out_rate:
           type: number
           format: double
@@ -12470,7 +12790,7 @@ components:
       description: Serializer for CostLine creation and updates - full write capabilities
       properties:
         kind:
-          $ref: '#/components/schemas/Kind332Enum'
+          $ref: '#/components/schemas/CostLineKindEnum'
         desc:
           type: string
           description: Description of this cost line
@@ -13854,7 +14174,7 @@ components:
           type: string
           format: uuid
         status:
-          $ref: '#/components/schemas/Status7aeEnum'
+          $ref: '#/components/schemas/QuoteStatusEnum'
         date:
           type: string
           format: date
@@ -14032,6 +14352,22 @@ components:
         - job_name
         - job_number
         - sheet_id
+    QuoteStatusEnum:
+      enum:
+        - DRAFT
+        - SENT
+        - DECLINED
+        - ACCEPTED
+        - INVOICED
+        - DELETED
+      type: string
+      description: |-
+        * `DRAFT` - Draft
+        * `SENT` - Sent
+        * `DECLINED` - Declined
+        * `ACCEPTED` - Accepted
+        * `INVOICED` - Invoiced
+        * `DELETED` - Deleted
     RoleEnum:
       enum:
         - user
@@ -15025,58 +15361,6 @@ components:
         details: {}
       required:
         - error
-    Status1beEnum:
-      enum:
-        - DRAFT
-        - SUBMITTED
-        - AUTHORISED
-        - DELETED
-        - VOIDED
-        - PAID
-      type: string
-      description: |-
-        * `DRAFT` - Draft
-        * `SUBMITTED` - Submitted
-        * `AUTHORISED` - Authorised
-        * `DELETED` - Deleted
-        * `VOIDED` - Voided
-        * `PAID` - Paid
-    Status7aeEnum:
-      enum:
-        - DRAFT
-        - SENT
-        - DECLINED
-        - ACCEPTED
-        - INVOICED
-        - DELETED
-      type: string
-      description: |-
-        * `DRAFT` - Draft
-        * `SENT` - Sent
-        * `DECLINED` - Declined
-        * `ACCEPTED` - Accepted
-        * `INVOICED` - Invoiced
-        * `DELETED` - Deleted
-    Status7b9Enum:
-      enum:
-        - draft
-        - awaiting_approval
-        - approved
-        - in_progress
-        - unusual
-        - recently_completed
-        - special
-        - archived
-      type: string
-      description: |-
-        * `draft` - Draft
-        * `awaiting_approval` - Awaiting Approval
-        * `approved` - Approved
-        * `in_progress` - In Progress
-        * `unusual` - Unusual
-        * `recently_completed` - Recently Completed
-        * `special` - Special
-        * `archived` - Archived
     StockConsumeRequest:
       type: object
       description: Serializer for stock consumption request
@@ -15694,7 +15978,7 @@ components:
           readOnly: true
         kind:
           allOf:
-            - $ref: '#/components/schemas/Kind332Enum'
+            - $ref: '#/components/schemas/CostLineKindEnum'
           readOnly: true
         desc:
           type: string
@@ -15893,14 +16177,6 @@ components:
           minLength: 1
       required:
         - token
-    TypeC98Enum:
-      enum:
-        - stock
-        - job
-      type: string
-      description: |-
-        * `stock` - Stock
-        * `job` - Job
     UploadedFile:
       type: object
       description: Serializer for file upload response.
@@ -16695,7 +16971,7 @@ components:
           type: string
           maxLength: 255
         status:
-          $ref: '#/components/schemas/Status1beEnum'
+          $ref: '#/components/schemas/InvoiceStatusEnum'
         online_url:
           type: string
           format: uri
@@ -16805,7 +17081,7 @@ components:
       description: Simplified Quote serializer for xero_quote field
       properties:
         status:
-          $ref: '#/components/schemas/Status7aeEnum'
+          $ref: '#/components/schemas/QuoteStatusEnum'
         online_url:
           type: string
           format: uri
