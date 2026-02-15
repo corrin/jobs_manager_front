@@ -70,7 +70,7 @@
                     :key="status.key"
                     :value="status.key"
                   >
-                    {{ status.label }} ({{ getJobsByStatus(status.key).length }})
+                    {{ status.label }} ({{ getMobileCountDisplay(status.key) }})
                   </option>
                 </select>
 
@@ -85,7 +85,7 @@
                   >
                     <span class="truncate">{{ status.label }}</span>
                     <span class="mobile-status-pill__count">{{
-                      getJobsByStatus(status.key).length
+                      getMobileCountDisplay(status.key)
                     }}</span>
                   </button>
                 </div>
@@ -104,6 +104,9 @@
                       :jobs="getSortedJobsByStatus(status.key)"
                       :is-loading="isLoading"
                       :is-dragging="isDragging"
+                      :has-more="getColumnHasMore(status.key)"
+                      :total="getColumnTotal(status.key)"
+                      :column-job-count="isSearchActive ? getColumnLoadedCount(status.key) : null"
                       :mobile-selected-staff-id="mobileAssignStaffId"
                       :enable-tap-assign="isTapAssignActive"
                       @job-click="viewJob"
@@ -140,6 +143,9 @@
                       :jobs="getSortedJobsByStatus(status.key)"
                       :is-loading="isLoading"
                       :is-dragging="isDragging"
+                      :has-more="getColumnHasMore(status.key)"
+                      :total="getColumnTotal(status.key)"
+                      :column-job-count="isSearchActive ? getColumnLoadedCount(status.key) : null"
                       :mobile-selected-staff-id="mobileAssignStaffId"
                       :enable-tap-assign="isTapAssignActive"
                       @job-click="viewJob"
@@ -167,6 +173,9 @@
                       :jobs="getSortedJobsByStatus(status.key)"
                       :is-loading="isLoading"
                       :is-dragging="isDragging"
+                      :has-more="getColumnHasMore(status.key)"
+                      :total="getColumnTotal(status.key)"
+                      :column-job-count="isSearchActive ? getColumnLoadedCount(status.key) : null"
                       :mobile-selected-staff-id="mobileAssignStaffId"
                       :enable-tap-assign="isTapAssignActive"
                       @job-click="viewJob"
@@ -386,6 +395,10 @@ const {
   visibleStatusChoices,
 
   getJobsByStatus,
+  getColumnHasMore,
+  getColumnTotal,
+  getColumnLoadedCount,
+  isSearchActive,
 
   loadJobs,
   handleAdvancedSearch,
@@ -751,6 +764,24 @@ const ensureDraftColumnInitialized = () => {
 function getSortedJobsByStatus(statusKey: string) {
   // Use the filtered getJobsByStatus from useKanban instead of directly calling KanbanCategorizationService
   return getJobsByStatus.value(statusKey)
+}
+
+function getMobileCountDisplay(statusKey: string): string {
+  const visibleCount = getJobsByStatus.value(statusKey).length
+  // When searching, show "X of Y" where Y is loaded column count
+  if (isSearchActive.value) {
+    const loadedCount = getColumnLoadedCount.value(statusKey)
+    if (visibleCount !== loadedCount) {
+      return `${visibleCount} of ${loadedCount.toLocaleString()}`
+    }
+  }
+  // When column is truncated, show "X of Y" where Y is total from API
+  const hasMore = getColumnHasMore.value(statusKey)
+  const total = getColumnTotal.value(statusKey)
+  if (hasMore && total != null) {
+    return `${visibleCount} of ${total.toLocaleString()}`
+  }
+  return String(visibleCount)
 }
 
 onMounted(async () => {

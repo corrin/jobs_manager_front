@@ -24,6 +24,7 @@ interface ColumnState {
   loading: boolean
   loaded: boolean
   hasMore: boolean
+  total: number | null
   error: string | null
 }
 
@@ -91,6 +92,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
         loading: false,
         loaded: false,
         hasMore: true,
+        total: null,
         error: null,
       }
     })
@@ -100,6 +102,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
       loading: false,
       loaded: false,
       hasMore: true,
+      total: null,
       error: null,
     }
     // Add special column
@@ -108,6 +111,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
       loading: false,
       loaded: false,
       hasMore: true,
+      total: null,
       error: null,
     }
   }
@@ -155,6 +159,7 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
       columnState.jobs = jobs as unknown as KanbanJob[]
       columnState.loaded = true
       columnState.hasMore = Boolean(data.has_more)
+      columnState.total = data.total ?? null
 
       debugLog(`✅ Loaded ${jobs.length} jobs for column: ${columnId}`)
     } catch (err) {
@@ -291,6 +296,29 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
   const getColumnError = computed(() => (columnId: string) => {
     const columnState = columnStates[columnId]
     return columnState?.error || null
+  })
+
+  // Get column hasMore state
+  const getColumnHasMore = computed(() => (columnId: string) => {
+    const columnState = columnStates[columnId]
+    return columnState?.hasMore || false
+  })
+
+  // Get column total count (from API response)
+  const getColumnTotal = computed(() => (columnId: string) => {
+    const columnState = columnStates[columnId]
+    return columnState?.total ?? null
+  })
+
+  // Get loaded job count for a column (ignoring search filtering)
+  const getColumnLoadedCount = computed(() => (columnId: string) => {
+    const columnState = columnStates[columnId]
+    return columnState?.jobs.length ?? 0
+  })
+
+  // Whether search/filter is active
+  const isSearchActive = computed(() => {
+    return filteredJobs.value.length > 0 || searchQuery.value.trim() !== ''
   })
 
   // Optimistic job status update
@@ -623,6 +651,10 @@ export function useOptimizedKanban(onJobsLoaded?: () => void) {
     getJobsByStatus,
     getColumnLoading,
     getColumnError,
+    getColumnHasMore,
+    getColumnTotal,
+    getColumnLoadedCount,
+    isSearchActive,
 
     // Actions
     loadColumnJobs,
