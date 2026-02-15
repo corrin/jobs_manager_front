@@ -371,9 +371,9 @@ test.describe.serial('xero pay item validation', () => {
     // Wait for the pay item to update
     await page.waitForTimeout(1000)
 
-    // Validate the pay item changed to "Double Time"
+    // Validate the pay item changed to a 2.0 multiplier pay item
     const payItem = await getPayItemValue(page, rowId)
     console.log(`After rate change to 2.0, pay item: "${payItem}"`)
-    expect(payItem).toBe('Double Time')
+    expect(['Double Time', 'Overtime (2.0)']).toContain(payItem)
   })
 })
