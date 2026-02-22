@@ -51,7 +51,7 @@
           </div>
 
           <div class="flex-1 flex flex-col space-y-1 md:space-y-2">
-            <div class="md:hidden space-y-3">
+            <div class="md:hidden space-y-3" data-automaton-id="kanban-layout-mobile">
               <div
                 class="sticky top-0 z-30 bg-white/95 backdrop-blur border border-grey-200 rounded-2xl shadow-sm p-3 space-y-2 mobile-status-toolbar"
               >
@@ -123,7 +123,7 @@
             </div>
 
             <div class="hidden md:flex md:flex-1 md:flex-col">
-              <div class="block lg:hidden">
+              <div class="block lg:hidden" data-automaton-id="kanban-layout-tablet">
                 <div class="w-full mx-auto px-2">
                   <div
                     class="grid gap-3"
@@ -160,7 +160,7 @@
                 </div>
               </div>
 
-              <div class="hidden lg:block">
+              <div class="hidden lg:block" data-automaton-id="kanban-layout-desktop">
                 <div class="w-full mx-auto px-2 overflow-x-auto">
                   <div
                     class="grid gap-2 xl:gap-3"
@@ -323,6 +323,12 @@ type StatusOption = {
 const jobsStore = useJobsStore()
 const { isWorkshopMode, isOfficeMode } = useBoardMode()
 const isDesktop = useMediaQuery('(min-width: 768px)')
+const isLgOrAbove = useMediaQuery('(min-width: 1024px)')
+const activeLayout = computed<'mobile' | 'tablet' | 'desktop'>(() => {
+  if (isLgOrAbove.value) return 'desktop'
+  if (isDesktop.value) return 'tablet'
+  return 'mobile'
+})
 const route = useRoute()
 const router = useRouter()
 const mobileAssignStaffId = ref<string | null>(null)
@@ -412,10 +418,6 @@ const {
 } = useOptimizedKanban(() => {
   nextTick(() => {
     initialiseSortableForAllColumns()
-    // Ensure draft column is always initialized
-    setTimeout(() => {
-      ensureDraftColumnInitialized()
-    }, 100)
   })
 })
 
@@ -639,13 +641,12 @@ const { isDragging, initializeSortable, destroyAllSortables } = useOptimizedDrag
       const { jobId, fromStatus, toStatus, beforeId, afterId } = payload
       if (fromStatus !== toStatus) {
         const actualStatus = KanbanCategorizationService.getDefaultStatusForColumn(toStatus)
-        // First update the status
+        // Fire-and-forget: updateJobStatus handles errors internally and revalidates columns
         void updateJobStatus(jobId, actualStatus)
-        // Then reorder to the correct position if we have positioning info
         if (beforeId || afterId) {
           setTimeout(() => {
             reorderJob(jobId, beforeId, afterId, toStatus)
-          }, 500) // Wait for status update to complete
+          }, 500)
         }
       } else {
         reorderJob(jobId, beforeId, afterId, toStatus)
@@ -658,37 +659,18 @@ const sortableInitialized = ref<Set<string>>(new Set())
 const columnsReadyForSortable = ref<Map<string, HTMLElement>>(new Map())
 
 const handleSortableReady = (element: HTMLElement, status: string) => {
-  console.log(`🔧 handleSortableReady called for ${status}`, {
-    status,
-    element,
-    elementConnected: element.isConnected,
-    elementDataStatus: element.dataset.status,
-    elementId: element.id,
-    elementClasses: element.className,
-  })
+  // Multiple responsive layouts (mobile, tablet, desktop) all render KanbanColumn
+  // components, but only one layout is visible at any viewport size. Only initialize
+  // SortableJS for columns in the active layout to avoid destroying active instances.
+  const layoutWrapper = element.closest('[data-automaton-id]') as HTMLElement | null
+  if (layoutWrapper?.dataset.automatonId !== `kanban-layout-${activeLayout.value}`) {
+    return
+  }
 
   columnsReadyForSortable.value.set(status, element)
 
   const columnJobs = getJobsByStatus.value(status)
-
-  if (status === 'draft') {
-    console.log(`🎯 DRAFT COLUMN: handleSortableReady called`, {
-      status,
-      element,
-      jobsCount: columnJobs.length,
-      alreadyInitialized: sortableInitialized.value.has(status),
-      elementConnected: element.isConnected,
-      elementDataStatus: element.dataset.status,
-    })
-  }
-
-  // Special case for draft column - always initialize even without jobs
-  if (status === 'draft') {
-    if (!sortableInitialized.value.has(status)) {
-      console.log(`🎯 DRAFT COLUMN: Initializing draft column regardless of job count`)
-      initializeSortableForColumn(status, element)
-    }
-  } else if (columnJobs.length > 0 && !sortableInitialized.value.has(status)) {
+  if (!sortableInitialized.value.has(status) && (columnJobs.length > 0 || status === 'draft')) {
     initializeSortableForColumn(status, element)
   }
 }
@@ -698,67 +680,29 @@ const initializeSortableForColumn = (status: string, element: HTMLElement) => {
     return
   }
 
-  if (status === 'draft') {
-    console.log(`🎯 DRAFT COLUMN: initializeSortableForColumn called`, {
-      status,
-      element,
-      elementConnected: element.isConnected,
-      elementDataStatus: element.dataset.status,
-      hasChildren: element.children.length > 0,
-    })
-  }
+  // Mark as initialized immediately to prevent race conditions when multiple
+  // responsive layouts emit sortable-ready in the same tick
+  sortableInitialized.value.add(status)
 
   nextTick(() => {
-    // Special handling for draft column - ensure it's always initialized
-    if (status === 'draft') {
-      console.log(`🎯 DRAFT COLUMN: About to initialize sortable in nextTick`)
-
-      // Force re-initialization for draft column if needed
-      if (!element.isConnected) {
-        console.warn(`🎯 DRAFT COLUMN: Element not connected, skipping initialization`)
-        return
-      }
+    if (!element.isConnected) {
+      sortableInitialized.value.delete(status)
+      return
     }
 
     initializeSortable(element, status)
-    sortableInitialized.value.add(status)
-
-    if (status === 'draft') {
-      console.log(`🎯 DRAFT COLUMN: Sortable initialized successfully`)
-    }
   })
 }
 
 const initialiseSortableForAllColumns = () => {
+  const expectedLayout = `kanban-layout-${activeLayout.value}`
   columnsReadyForSortable.value.forEach((element, status) => {
-    if (!sortableInitialized.value.has(status)) {
+    if (sortableInitialized.value.has(status)) return
+    const wrapper = element.closest('[data-automaton-id]') as HTMLElement | null
+    if (wrapper?.dataset.automatonId === expectedLayout) {
       initializeSortableForColumn(status, element)
     }
   })
-
-  // Special handling for draft column - force initialization even if no jobs
-  const draftElement = columnsReadyForSortable.value.get('draft')
-  if (draftElement && !sortableInitialized.value.has('draft')) {
-    console.log(`🎯 DRAFT COLUMN: Force initializing draft column even without jobs`)
-    initializeSortableForColumn('draft', draftElement)
-  }
-}
-
-// New function to specifically handle draft column initialization issues
-const ensureDraftColumnInitialized = () => {
-  const draftElement = columnsReadyForSortable.value.get('draft')
-  if (draftElement) {
-    console.log(`🎯 DRAFT COLUMN: Ensuring draft column is initialized`, {
-      element: draftElement,
-      isInitialized: sortableInitialized.value.has('draft'),
-      isConnected: draftElement.isConnected,
-      dataStatus: draftElement.dataset.status,
-    })
-
-    if (!sortableInitialized.value.has('draft')) {
-      initializeSortableForColumn('draft', draftElement)
-    }
-  }
 }
 
 function getSortedJobsByStatus(statusKey: string) {

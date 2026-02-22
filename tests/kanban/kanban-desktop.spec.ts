@@ -56,9 +56,25 @@ const dragCardToColumn = async (page: Page, card: Locator, column: Locator) => {
     throw new Error('Unable to resolve drag and drop positions')
   }
 
-  await page.mouse.move(cardBox.x + cardBox.width / 2, cardBox.y + cardBox.height / 2)
+  const startX = cardBox.x + cardBox.width / 2
+  const startY = cardBox.y + cardBox.height / 2
+  const endX = columnBox.x + Math.min(60, columnBox.width / 2)
+  const endY = columnBox.y + 60
+
+  // SortableJS runs in forceFallback mode (mouse-event based dragging).
+  // Simulate: mousedown → small move to trigger drag start → move to target → mouseup
+  await page.mouse.move(startX, startY)
   await page.mouse.down()
-  await page.mouse.move(columnBox.x + Math.min(60, columnBox.width / 2), columnBox.y + 60)
+  await page.waitForTimeout(150)
+
+  // Small initial move to cross SortableJS's drag threshold
+  await page.mouse.move(startX, startY + 10, { steps: 3 })
+  await page.waitForTimeout(100)
+
+  // Move to target column in steps so SortableJS tracks the position
+  await page.mouse.move(endX, endY, { steps: 10 })
+  await page.waitForTimeout(100)
+
   await page.mouse.up()
 }
 
@@ -85,7 +101,7 @@ const pickAssignableStaff = async (card: Locator, staffItems: Locator) => {
   throw new Error('No available staff to assign in Kanban staff panel')
 }
 
-test.describe.serial('kanban desktop', () => {
+test.describe('kanban desktop', () => {
   test('change status via drag and drop', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
     const jobId = getJobIdFromUrl(sharedEditJobUrl)
 

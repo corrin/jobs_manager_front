@@ -1,6 +1,6 @@
 import { ref, type Ref } from 'vue'
 import Sortable from 'sortablejs'
-import type { SortableEvent, MoveEvent } from 'sortablejs'
+import type { SortableEvent } from 'sortablejs'
 import { debugLog } from '../utils/debug'
 
 export interface OptimizedDragEventPayload {
@@ -25,24 +25,9 @@ export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler)
     }
     if (!element || !element.isConnected) return
 
-    // Special debug logging for draft column
-    if (status === 'draft') {
-      debugLog(`🎯 DRAFT COLUMN: Creating Optimized Sortable for ${status}:`, {
-        element,
-        dataStatus: element.dataset.status,
-        children: element.children.length,
-        elementConnected: element.isConnected,
-        elementParent: element.parentElement?.tagName,
-        elementId: element.id,
-        elementClasses: element.className,
-      })
-    } else {
-      debugLog(`🔧 Creating Optimized Sortable for ${status}:`, {
-        element,
-        dataStatus: element.dataset.status,
-        children: element.children.length,
-      })
-    }
+    debugLog(`🔧 Creating Sortable for ${status}:`, {
+      children: element.children.length,
+    })
 
     const sortableConfig = {
       group: 'kanban-jobs',
@@ -54,31 +39,19 @@ export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler)
       fallbackOnBody: true,
       swapThreshold: 0.65,
       onStart: () => {
-        if (status === 'draft') {
-          debugLog(`🎯 DRAFT COLUMN: Drag started from: ${status}`)
-        }
         isDragging.value = true
         document.body.classList.add('is-dragging')
       },
-      onMove: (evt: MoveEvent) => {
-        const toColumn = (evt.to.closest('[data-status]') as HTMLElement | null)?.dataset.status
-        if (status === 'draft' || toColumn === 'draft') {
-          debugLog(`🎯 DRAFT COLUMN: Moving from ${status} to: ${toColumn}`)
-        }
+      onMove: () => {
         return true
       },
       onEnd: async (evt: SortableEvent) => {
-        const dragFromStatus = (evt.from as HTMLElement).dataset.status
-        const dragToStatus = (evt.to as HTMLElement).dataset.status
-
-        if (dragFromStatus === 'draft' || dragToStatus === 'draft') {
-          debugLog(`🎯 DRAFT COLUMN: Drag ended - ${dragFromStatus} → ${dragToStatus}`)
-        }
-
         isDragging.value = false
         document.body.classList.remove('is-dragging')
 
+        // Clean up SortableJS CSS classes that persist on the dragged element
         const jobElement = evt.item as HTMLElement
+        jobElement.classList.remove('sortable-chosen', 'sortable-drag', 'sortable-ghost')
         const jobId = jobElement.dataset.jobId
         if (!jobId) return
 
