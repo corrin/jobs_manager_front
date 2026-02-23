@@ -61,27 +61,24 @@ const dragCardToColumn = async (page: Page, card: Locator, column: Locator) => {
   const endX = columnBox.x + Math.min(60, columnBox.width / 2)
   const endY = columnBox.y + 60
 
-  // Native HTML5 DnD requires human-like timing:
-  // 1. mousedown + hold to let browser initiate native drag
-  // 2. Slow movement with many steps so drag events fire properly
-  // 3. Wait after release for SortableJS to process the drop
+  // Native HTML5 DnD requires deliberate timing:
+  // 1. Hold after mousedown so the browser initiates native drag
+  // 2. Move in steps so drag events fire on intermediate elements
+  // 3. Brief settle after release for SortableJS to process the drop
   await page.mouse.move(startX, startY)
   await page.mouse.down()
-  await page.waitForTimeout(500)
+  await page.waitForTimeout(200)
 
-  // Drag slowly to target (50 steps over ~2 seconds)
-  const steps = 50
-  const stepDelay = 40
+  const steps = 25
+  const stepDelay = 20
   for (let i = 1; i <= steps; i++) {
     const t = i / steps
-    const x = startX + (endX - startX) * t
-    const y = startY + (endY - startY) * t
-    await page.mouse.move(x, y)
+    await page.mouse.move(startX + (endX - startX) * t, startY + (endY - startY) * t)
     await page.waitForTimeout(stepDelay)
   }
 
   await page.mouse.up()
-  await page.waitForTimeout(1000)
+  await page.waitForTimeout(500)
 }
 
 const pickAssignableStaff = async (card: Locator, staffItems: Locator) => {
