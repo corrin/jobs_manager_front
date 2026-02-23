@@ -104,7 +104,7 @@ const pickAssignableStaff = async (card: Locator, staffItems: Locator) => {
   throw new Error('No available staff to assign in Kanban staff panel')
 }
 
-test.describe('kanban desktop', () => {
+test.describe.serial('kanban desktop', () => {
   test('change status via drag and drop', async ({ authenticatedPage: page, sharedEditJobUrl }) => {
     const jobId = getJobIdFromUrl(sharedEditJobUrl)
 
