@@ -917,8 +917,12 @@ const KanbanJob = z.object({
   speed_quality_tradeoff: z.string(),
   created_by_id: z.string().uuid().nullable(),
   created_at: z.string().nullable(),
+  delivery_date: z.string().nullable(),
   priority: z.number(),
   shop_job: z.boolean(),
+  over_budget: z.boolean(),
+  quote_revenue: z.number(),
+  time_and_materials_revenue: z.number(),
 })
 const AdvancedSearchResponse = z
   .object({
@@ -953,8 +957,12 @@ const KanbanColumnJob = z.object({
   speed_quality_tradeoff: z.string(),
   created_by_id: z.string().nullable(),
   created_at: z.string().nullable(),
+  delivery_date: z.string().nullable(),
   priority: z.number(),
   shop_job: z.boolean(),
+  over_budget: z.boolean(),
+  quote_revenue: z.number(),
+  time_and_materials_revenue: z.number(),
   badge_label: z.string(),
   badge_color: z.string(),
 })

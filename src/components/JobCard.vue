@@ -71,7 +71,8 @@
     <div class="flex justify-between items-center mb-1">
       <!-- Bigger, high-contrast job number -->
       <span
-        class="inline-flex items-center rounded-md bg-blue-600 text-white px-2 py-1 text-[0.82rem] font-semibold tracking-wide"
+        class="inline-flex items-center rounded-md text-white px-2 py-1 text-[0.82rem] font-semibold tracking-wide"
+        :class="job.over_budget ? 'bg-red-600' : 'bg-blue-600'"
         style="font-variant-numeric: tabular-nums"
       >
         #{{ job.job_number }}
@@ -166,6 +167,10 @@
     <!-- Contact only (client line removed by request) -->
     <div v-if="job.contact_person" class="text-[0.8rem] text-gray-600 truncate font-medium">
       <span class="font-semibold">Contact:</span> {{ job.contact_person }}
+    </div>
+
+    <div v-if="dueDateDisplay" class="text-[0.8rem] truncate font-bold" :class="dueDateColor">
+      Due: {{ dueDateDisplay }}
     </div>
 
     <!-- Status icons bottom-right -->
@@ -361,6 +366,27 @@ const descriptionOrName = computed(() => {
   return d.length ? d : props.job.name
 })
 const isRealDescription = computed(() => (props.job.description || '').trim().length > 0)
+
+const dueDateDisplay = computed(() => {
+  if (!props.job.delivery_date) return null
+  if (props.job.status_key === 'recently_completed' || props.job.status_key === 'archived')
+    return null
+  return new Date(props.job.delivery_date + 'T00:00:00').toLocaleDateString('en-AU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+})
+
+const dueDateColor = computed(() => {
+  if (!props.job.delivery_date) return ''
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const due = new Date(props.job.delivery_date + 'T00:00:00')
+  if (due < today) return 'text-red-600'
+  if (due.getTime() === today.getTime()) return 'text-amber-600'
+  return 'text-gray-900'
+})
 
 onMounted(() => {
   if (jobStaffContainerRef.value) {
