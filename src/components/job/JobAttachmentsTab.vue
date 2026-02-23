@@ -368,13 +368,13 @@ const processAndUploadFile = async (file: File) => {
     let fileToUpload = file
 
     if (isImageFile(file)) {
-      debugLog(`🖼️ Compressing image before upload: ${file.name}`)
+      debugLog(`Compressing image before upload: ${file.name}`)
       fileToUpload = await compressImage(file)
     }
 
     await uploadFile(fileToUpload)
   } catch (error) {
-    debugLog(`❌ Error processing file ${file.name}:`, error)
+    debugLog(`Error processing file ${file.name}:`, error)
     toast.error(`Failed to upload ${file.name}`)
   }
 }
@@ -433,7 +433,7 @@ const compressImage = (
               lastModified: Date.now(),
             })
 
-            debugLog(`📦 Image compressed: ${file.name}
+            debugLog(`Image compressed: ${file.name}
               Original: ${formatFileSize(file.size)}
               Compressed: ${formatFileSize(compressedFile.size)}`)
 

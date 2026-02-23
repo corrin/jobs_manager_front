@@ -25,17 +25,17 @@ export function useJobCache() {
     const entry = cache.value.get(jobId)
 
     if (!entry) {
-      debugLog(`📦 Cache miss for job ${jobId}`)
+      debugLog(`Cache miss for job ${jobId}`)
       return null
     }
 
     if (!isCacheValid(entry, ttl)) {
-      debugLog(`📦 Cache expired for job ${jobId}`)
+      debugLog(`Cache expired for job ${jobId}`)
       cache.value.delete(jobId)
       return null
     }
 
-    debugLog(`📦 Cache hit for job ${jobId}`)
+    debugLog(`Cache hit for job ${jobId}`)
     return entry.data
   }
 
@@ -47,12 +47,12 @@ export function useJobCache() {
     }
 
     cache.value.set(jobId, entry)
-    debugLog(`📦 Job ${jobId} cached`)
+    debugLog(`Job ${jobId} cached`)
   }
 
   const removeCachedJob = (jobId: string): void => {
     if (cache.value.delete(jobId)) {
-      debugLog(`📦 Job ${jobId} removed from cache`)
+      debugLog(`Job ${jobId} removed from cache`)
     }
   }
 
@@ -72,7 +72,7 @@ export function useJobCache() {
     if (entry && isCacheValid(entry)) {
       const updatedData = { ...entry.data, ...updates }
       setCachedJob(jobId, updatedData)
-      debugLog(`📦 Job ${jobId} updated in cache`)
+      debugLog(`Job ${jobId} updated in cache`)
     }
   }
 
@@ -112,7 +112,7 @@ export function useJobCache() {
       return cached as T
     }
 
-    debugLog(`📦 Loading job ${jobId} from API...`)
+    debugLog(`Loading job ${jobId} from API...`)
     const freshData = await loadFunction()
 
     setCachedJob(jobId, freshData)

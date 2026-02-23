@@ -22,7 +22,6 @@
           'bg-blue-50 border-blue-200': isDragging,
           // Single column layout with Tailwind - option to toggle back to 2-column by changing 'grid-cols-1' to 'grid-cols-2'
           'space-y-3': jobs.length > 0,
-          'min-h-32': normalizedStatus.key === 'draft' && jobs.length === 0,
         }"
       >
         <JobCard
@@ -236,7 +235,7 @@ onMounted(async () => {
   await nextTick()
 
   if (jobListRef.value) {
-    debugLog(`🔧 Column ${normalizedStatus.value.key} ready, emitting sortable-ready`)
+    debugLog(`Column ${normalizedStatus.value.key} ready, emitting sortable-ready`)
     emit('sortable-ready', jobListRef.value, normalizedStatus.value.key)
 
     jobListRef.value.addEventListener('archived-job-drop', handleArchivedJobDrop as EventListener)

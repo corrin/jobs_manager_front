@@ -210,7 +210,7 @@ export const useDeliveryReceiptStore = defineStore('deliveryReceipts', () => {
         `Failed to fetch existing allocations for PO ${purchaseOrderId}`,
       )
       error.value = errorMessage
-      debugLog(`❌ Error fetching existing allocations for PO ${purchaseOrderId}:`, err)
+      debugLog(`Error fetching existing allocations for PO ${purchaseOrderId}:`, err)
       throw new Error(errorMessage)
     } finally {
       loading.value = false
