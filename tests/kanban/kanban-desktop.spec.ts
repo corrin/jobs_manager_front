@@ -56,10 +56,29 @@ const dragCardToColumn = async (page: Page, card: Locator, column: Locator) => {
     throw new Error('Unable to resolve drag and drop positions')
   }
 
-  await page.mouse.move(cardBox.x + cardBox.width / 2, cardBox.y + cardBox.height / 2)
+  const startX = cardBox.x + cardBox.width / 2
+  const startY = cardBox.y + cardBox.height / 2
+  const endX = columnBox.x + Math.min(60, columnBox.width / 2)
+  const endY = columnBox.y + 60
+
+  // Native HTML5 DnD requires deliberate timing:
+  // 1. Hold after mousedown so the browser initiates native drag
+  // 2. Move in steps so drag events fire on intermediate elements
+  // 3. Brief settle after release for SortableJS to process the drop
+  await page.mouse.move(startX, startY)
   await page.mouse.down()
-  await page.mouse.move(columnBox.x + Math.min(60, columnBox.width / 2), columnBox.y + 60)
+  await page.waitForTimeout(200)
+
+  const steps = 25
+  const stepDelay = 20
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps
+    await page.mouse.move(startX + (endX - startX) * t, startY + (endY - startY) * t)
+    await page.waitForTimeout(stepDelay)
+  }
+
   await page.mouse.up()
+  await page.waitForTimeout(500)
 }
 
 const pickAssignableStaff = async (card: Locator, staffItems: Locator) => {

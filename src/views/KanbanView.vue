@@ -51,145 +51,70 @@
           </div>
 
           <div class="flex-1 flex flex-col space-y-1 md:space-y-2">
-            <div class="md:hidden space-y-3">
-              <div
-                class="sticky top-0 z-30 bg-white/95 backdrop-blur border border-grey-200 rounded-2xl shadow-sm p-3 space-y-2 mobile-status-toolbar"
-              >
-                <div class="flex items-center justify-between text-xs font-semibold text-grey-500">
-                  <span>Focused Column</span>
-                  <span class="uppercase tracking-wide"
-                    >{{ visibleStatusChoices.length }} total</span
-                  >
-                </div>
-                <select
-                  v-model="selectedMobileStatus"
-                  class="w-full p-2.5 text-sm border border-grey-300 rounded-lg bg-white text-grey-900 font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option
-                    v-for="status in visibleStatusChoices"
-                    :key="status.key"
-                    :value="status.key"
-                  >
-                    {{ status.label }} ({{ getMobileCountDisplay(status.key) }})
-                  </option>
-                </select>
+            <KanbanMobileLayout
+              v-if="activeLayout === 'mobile'"
+              :visible-status-choices="visibleStatusChoices"
+              :get-sorted-jobs-by-status="getSortedJobsByStatus"
+              :is-loading="isLoading"
+              :is-dragging="isDragging"
+              :get-column-has-more="(k: string) => getColumnHasMore(k)"
+              :get-column-total="(k: string) => getColumnTotal(k)"
+              :get-column-loaded-count="(k: string) => getColumnLoadedCount(k)"
+              :is-search-active="isSearchActive"
+              :mobile-assign-staff-id="mobileAssignStaffId"
+              :enable-tap-assign="isTapAssignActive"
+              :selected-mobile-status="selectedMobileStatus"
+              :get-mobile-count-display="getMobileCountDisplay"
+              @job-click="viewJob"
+              @load-more="loadMoreJobs"
+              @sortable-ready="handleSortableReady"
+              @staff-assigned="handleStaffAssigned"
+              @staff-unassigned="handleStaffUnassigned"
+              @status-change="openStatusDrawer"
+              @select-mobile-status="selectMobileStatus"
+            />
 
-                <div class="flex gap-2 overflow-x-auto mobile-status-pills">
-                  <button
-                    v-for="status in visibleStatusChoices"
-                    :key="status.key"
-                    type="button"
-                    class="mobile-status-pill"
-                    :class="{ 'mobile-status-pill--active': selectedMobileStatus === status.key }"
-                    @click="selectMobileStatus(status.key)"
-                  >
-                    <span class="truncate">{{ status.label }}</span>
-                    <span class="mobile-status-pill__count">{{
-                      getMobileCountDisplay(status.key)
-                    }}</span>
-                  </button>
-                </div>
-              </div>
+            <KanbanGridLayout
+              v-if="activeLayout === 'tablet'"
+              mode="tablet"
+              :visible-status-choices="visibleStatusChoices"
+              :get-sorted-jobs-by-status="getSortedJobsByStatus"
+              :is-loading="isLoading"
+              :is-dragging="isDragging"
+              :get-column-has-more="(k: string) => getColumnHasMore(k)"
+              :get-column-total="(k: string) => getColumnTotal(k)"
+              :get-column-loaded-count="(k: string) => getColumnLoadedCount(k)"
+              :is-search-active="isSearchActive"
+              :mobile-assign-staff-id="mobileAssignStaffId"
+              :enable-tap-assign="isTapAssignActive"
+              @job-click="viewJob"
+              @load-more="loadMoreJobs"
+              @sortable-ready="handleSortableReady"
+              @staff-assigned="handleStaffAssigned"
+              @staff-unassigned="handleStaffUnassigned"
+              @status-change="openStatusDrawer"
+            />
 
-              <div class="mobile-columns-wrapper">
-                <div ref="mobileColumnsScroller" class="mobile-columns-scroller">
-                  <div
-                    v-for="status in visibleStatusChoices"
-                    :key="status.key"
-                    class="mobile-column-panel"
-                    :ref="(el) => setMobileColumnRef(status.key, el as HTMLElement | null)"
-                  >
-                    <KanbanColumn
-                      :status="status"
-                      :jobs="getSortedJobsByStatus(status.key)"
-                      :is-loading="isLoading"
-                      :is-dragging="isDragging"
-                      :has-more="getColumnHasMore(status.key)"
-                      :total="getColumnTotal(status.key)"
-                      :column-job-count="isSearchActive ? getColumnLoadedCount(status.key) : null"
-                      :mobile-selected-staff-id="mobileAssignStaffId"
-                      :enable-tap-assign="isTapAssignActive"
-                      @job-click="viewJob"
-                      @load-more="loadMoreJobs(status.key)"
-                      @sortable-ready="handleSortableReady"
-                      @staff-assigned="handleStaffAssigned"
-                      @staff-unassigned="handleStaffUnassigned"
-                      @status-change="openStatusDrawer"
-                      class="kanban-column"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="hidden md:flex md:flex-1 md:flex-col">
-              <div class="block lg:hidden">
-                <div class="w-full mx-auto px-2">
-                  <div
-                    class="grid gap-3"
-                    :class="{
-                      'grid-cols-1': visibleStatusChoices.length <= 2,
-                      'grid-cols-2':
-                        visibleStatusChoices.length <= 4 && visibleStatusChoices.length > 2,
-                      'grid-cols-3':
-                        visibleStatusChoices.length <= 6 && visibleStatusChoices.length > 4,
-                      'grid-cols-4': visibleStatusChoices.length > 6,
-                    }"
-                  >
-                    <KanbanColumn
-                      v-for="status in visibleStatusChoices"
-                      :key="status.key"
-                      :status="status"
-                      :jobs="getSortedJobsByStatus(status.key)"
-                      :is-loading="isLoading"
-                      :is-dragging="isDragging"
-                      :has-more="getColumnHasMore(status.key)"
-                      :total="getColumnTotal(status.key)"
-                      :column-job-count="isSearchActive ? getColumnLoadedCount(status.key) : null"
-                      :mobile-selected-staff-id="mobileAssignStaffId"
-                      :enable-tap-assign="isTapAssignActive"
-                      @job-click="viewJob"
-                      @load-more="loadMoreJobs(status.key)"
-                      @sortable-ready="handleSortableReady"
-                      @staff-assigned="handleStaffAssigned"
-                      @staff-unassigned="handleStaffUnassigned"
-                      @status-change="openStatusDrawer"
-                      class="kanban-column-responsive"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div class="hidden lg:block">
-                <div class="w-full mx-auto px-2 overflow-x-auto">
-                  <div
-                    class="grid gap-2 xl:gap-3"
-                    :style="`grid-template-columns: repeat(${visibleStatusChoices.length}, minmax(0, 1fr))`"
-                  >
-                    <KanbanColumn
-                      v-for="status in visibleStatusChoices"
-                      :key="status.key"
-                      :status="status"
-                      :jobs="getSortedJobsByStatus(status.key)"
-                      :is-loading="isLoading"
-                      :is-dragging="isDragging"
-                      :has-more="getColumnHasMore(status.key)"
-                      :total="getColumnTotal(status.key)"
-                      :column-job-count="isSearchActive ? getColumnLoadedCount(status.key) : null"
-                      :mobile-selected-staff-id="mobileAssignStaffId"
-                      :enable-tap-assign="isTapAssignActive"
-                      @job-click="viewJob"
-                      @load-more="loadMoreJobs(status.key)"
-                      @sortable-ready="handleSortableReady"
-                      @staff-assigned="handleStaffAssigned"
-                      @staff-unassigned="handleStaffUnassigned"
-                      @status-change="openStatusDrawer"
-                      class="w-full"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <KanbanGridLayout
+              v-if="activeLayout === 'desktop'"
+              mode="desktop"
+              :visible-status-choices="visibleStatusChoices"
+              :get-sorted-jobs-by-status="getSortedJobsByStatus"
+              :is-loading="isLoading"
+              :is-dragging="isDragging"
+              :get-column-has-more="(k: string) => getColumnHasMore(k)"
+              :get-column-total="(k: string) => getColumnTotal(k)"
+              :get-column-loaded-count="(k: string) => getColumnLoadedCount(k)"
+              :is-search-active="isSearchActive"
+              :mobile-assign-staff-id="mobileAssignStaffId"
+              :enable-tap-assign="isTapAssignActive"
+              @job-click="viewJob"
+              @load-more="loadMoreJobs"
+              @sortable-ready="handleSortableReady"
+              @staff-assigned="handleStaffAssigned"
+              @staff-unassigned="handleStaffUnassigned"
+              @status-change="openStatusDrawer"
+            />
           </div>
         </div>
       </div>
@@ -288,7 +213,8 @@ import { useMediaQuery } from '@vueuse/core'
 import { toast } from 'vue-sonner'
 import { Check, Loader2 } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
-import KanbanColumn from '@/components/KanbanColumn.vue'
+import KanbanGridLayout from '@/components/kanban/KanbanGridLayout.vue'
+import KanbanMobileLayout from '@/components/kanban/KanbanMobileLayout.vue'
 import AppLayout from '@/components/AppLayout.vue'
 import StaffPanel from '@/components/StaffPanel.vue'
 import AdvancedSearchDialog from '@/components/AdvancedSearchDialog.vue'
@@ -323,6 +249,12 @@ type StatusOption = {
 const jobsStore = useJobsStore()
 const { isWorkshopMode, isOfficeMode } = useBoardMode()
 const isDesktop = useMediaQuery('(min-width: 768px)')
+const isLgOrAbove = useMediaQuery('(min-width: 1024px)')
+const activeLayout = computed<'mobile' | 'tablet' | 'desktop'>(() => {
+  if (isLgOrAbove.value) return 'desktop'
+  if (isDesktop.value) return 'tablet'
+  return 'mobile'
+})
 const route = useRoute()
 const router = useRouter()
 const mobileAssignStaffId = ref<string | null>(null)
@@ -412,10 +344,6 @@ const {
 } = useOptimizedKanban(() => {
   nextTick(() => {
     initialiseSortableForAllColumns()
-    // Ensure draft column is always initialized
-    setTimeout(() => {
-      ensureDraftColumnInitialized()
-    }, 100)
   })
 })
 
@@ -498,64 +426,11 @@ const applyJobStatus = async (statusKey: string) => {
   statusUpdateKey.value = null
 }
 
-const mobileColumnsScroller = ref<HTMLElement | null>(null)
-const mobileColumnRefs = new Map<string, HTMLElement>()
-
-const setMobileColumnRef = (statusKey: string, element: HTMLElement | null) => {
-  if (!element) {
-    mobileColumnRefs.delete(statusKey)
-    return
-  }
-  mobileColumnRefs.set(statusKey, element)
-}
-
 const selectMobileStatus = (statusKey: string) => {
   if (statusKey) {
     selectedMobileStatus.value = statusKey
   }
 }
-
-const scrollMobileColumnIntoView = (statusKey: string) => {
-  if (!statusKey || !mobileColumnsScroller.value) {
-    return
-  }
-
-  const container = mobileColumnsScroller.value
-  const targetColumn = mobileColumnRefs.get(statusKey)
-
-  if (!targetColumn) {
-    return
-  }
-
-  const targetOffset = targetColumn.offsetLeft - container.offsetLeft
-  const centeredPosition = targetOffset - (container.clientWidth - targetColumn.clientWidth) / 2
-
-  container.scrollTo({
-    left: Math.max(0, centeredPosition),
-    behavior: 'smooth',
-  })
-}
-
-watch(
-  selectedMobileStatus,
-  (statusKey) => {
-    if (!statusKey) {
-      return
-    }
-    nextTick(() => {
-      scrollMobileColumnIntoView(statusKey)
-    })
-  },
-  { flush: 'post', immediate: true },
-)
-
-watch(mobileColumnsScroller, (scroller) => {
-  if (scroller && selectedMobileStatus.value) {
-    nextTick(() => {
-      scrollMobileColumnIntoView(selectedMobileStatus.value)
-    })
-  }
-})
 
 // Staff assignment handler with granular revalidation
 const handleStaffAssigned = async (payload: { staffId: string; jobId: string }) => {
@@ -639,13 +514,12 @@ const { isDragging, initializeSortable, destroyAllSortables } = useOptimizedDrag
       const { jobId, fromStatus, toStatus, beforeId, afterId } = payload
       if (fromStatus !== toStatus) {
         const actualStatus = KanbanCategorizationService.getDefaultStatusForColumn(toStatus)
-        // First update the status
+        // Fire-and-forget: updateJobStatus handles errors internally and revalidates columns
         void updateJobStatus(jobId, actualStatus)
-        // Then reorder to the correct position if we have positioning info
         if (beforeId || afterId) {
           setTimeout(() => {
             reorderJob(jobId, beforeId, afterId, toStatus)
-          }, 500) // Wait for status update to complete
+          }, 500)
         }
       } else {
         reorderJob(jobId, beforeId, afterId, toStatus)
@@ -658,37 +532,15 @@ const sortableInitialized = ref<Set<string>>(new Set())
 const columnsReadyForSortable = ref<Map<string, HTMLElement>>(new Map())
 
 const handleSortableReady = (element: HTMLElement, status: string) => {
-  console.log(`🔧 handleSortableReady called for ${status}`, {
-    status,
-    element,
-    elementConnected: element.isConnected,
-    elementDataStatus: element.dataset.status,
-    elementId: element.id,
-    elementClasses: element.className,
-  })
-
+  const previousElement = columnsReadyForSortable.value.get(status)
   columnsReadyForSortable.value.set(status, element)
 
-  const columnJobs = getJobsByStatus.value(status)
-
-  if (status === 'draft') {
-    console.log(`🎯 DRAFT COLUMN: handleSortableReady called`, {
-      status,
-      element,
-      jobsCount: columnJobs.length,
-      alreadyInitialized: sortableInitialized.value.has(status),
-      elementConnected: element.isConnected,
-      elementDataStatus: element.dataset.status,
-    })
+  // If element changed (component remounted with new DOM node), allow reinitialization
+  if (previousElement && previousElement !== element && sortableInitialized.value.has(status)) {
+    sortableInitialized.value.delete(status)
   }
 
-  // Special case for draft column - always initialize even without jobs
-  if (status === 'draft') {
-    if (!sortableInitialized.value.has(status)) {
-      console.log(`🎯 DRAFT COLUMN: Initializing draft column regardless of job count`)
-      initializeSortableForColumn(status, element)
-    }
-  } else if (columnJobs.length > 0 && !sortableInitialized.value.has(status)) {
+  if (!sortableInitialized.value.has(status)) {
     initializeSortableForColumn(status, element)
   }
 }
@@ -698,68 +550,31 @@ const initializeSortableForColumn = (status: string, element: HTMLElement) => {
     return
   }
 
-  if (status === 'draft') {
-    console.log(`🎯 DRAFT COLUMN: initializeSortableForColumn called`, {
-      status,
-      element,
-      elementConnected: element.isConnected,
-      elementDataStatus: element.dataset.status,
-      hasChildren: element.children.length > 0,
-    })
-  }
+  // Mark as initialized immediately to prevent race conditions
+  sortableInitialized.value.add(status)
 
   nextTick(() => {
-    // Special handling for draft column - ensure it's always initialized
-    if (status === 'draft') {
-      console.log(`🎯 DRAFT COLUMN: About to initialize sortable in nextTick`)
-
-      // Force re-initialization for draft column if needed
-      if (!element.isConnected) {
-        console.warn(`🎯 DRAFT COLUMN: Element not connected, skipping initialization`)
-        return
-      }
+    if (!element.isConnected) {
+      sortableInitialized.value.delete(status)
+      return
     }
 
     initializeSortable(element, status)
-    sortableInitialized.value.add(status)
-
-    if (status === 'draft') {
-      console.log(`🎯 DRAFT COLUMN: Sortable initialized successfully`)
-    }
   })
 }
 
 const initialiseSortableForAllColumns = () => {
   columnsReadyForSortable.value.forEach((element, status) => {
-    if (!sortableInitialized.value.has(status)) {
-      initializeSortableForColumn(status, element)
-    }
+    if (sortableInitialized.value.has(status)) return
+    initializeSortableForColumn(status, element)
   })
-
-  // Special handling for draft column - force initialization even if no jobs
-  const draftElement = columnsReadyForSortable.value.get('draft')
-  if (draftElement && !sortableInitialized.value.has('draft')) {
-    console.log(`🎯 DRAFT COLUMN: Force initializing draft column even without jobs`)
-    initializeSortableForColumn('draft', draftElement)
-  }
 }
 
-// New function to specifically handle draft column initialization issues
-const ensureDraftColumnInitialized = () => {
-  const draftElement = columnsReadyForSortable.value.get('draft')
-  if (draftElement) {
-    console.log(`🎯 DRAFT COLUMN: Ensuring draft column is initialized`, {
-      element: draftElement,
-      isInitialized: sortableInitialized.value.has('draft'),
-      isConnected: draftElement.isConnected,
-      dataStatus: draftElement.dataset.status,
-    })
-
-    if (!sortableInitialized.value.has('draft')) {
-      initializeSortableForColumn('draft', draftElement)
-    }
-  }
-}
+watch(activeLayout, () => {
+  destroyAllSortables()
+  sortableInitialized.value.clear()
+  columnsReadyForSortable.value.clear()
+})
 
 function getSortedJobsByStatus(statusKey: string) {
   // Use the filtered getJobsByStatus from useKanban instead of directly calling KanbanCategorizationService
@@ -796,12 +611,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.mobile-column {
-  min-width: 320px;
-  max-width: 400px;
-  width: 100%;
-}
-
 .staff-panel-container {
   width: 100%;
   background: #ffffff;
@@ -850,129 +659,6 @@ onUnmounted(() => {
 
 .mobile-assign-info {
   margin-bottom: 0.5rem;
-}
-
-.mobile-status-toolbar {
-  backdrop-filter: blur(8px);
-}
-
-.mobile-status-pills {
-  scrollbar-width: none;
-  padding-bottom: 0.25rem;
-}
-
-.mobile-status-pills::-webkit-scrollbar {
-  display: none;
-}
-
-.mobile-status-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.8rem;
-  font-size: 0.8rem;
-  border-radius: 999px;
-  border: 1px solid rgba(37, 99, 235, 0.3);
-  background-color: rgba(255, 255, 255, 0.8);
-  color: #1d4ed8;
-  white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.mobile-status-pill--active {
-  background-color: #1d4ed8;
-  color: #fff;
-  border-color: #1d4ed8;
-  box-shadow: 0 10px 20px rgba(59, 130, 246, 0.35);
-}
-
-.mobile-status-pill__count {
-  font-weight: 700;
-  font-size: 0.75rem;
-  opacity: 0.85;
-}
-
-.mobile-columns-wrapper {
-  position: relative;
-}
-
-.mobile-columns-scroller {
-  display: flex;
-  gap: 1rem;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  padding: 0.5rem 0.25rem 1.5rem;
-  scrollbar-width: thin;
-}
-
-.mobile-columns-scroller::-webkit-scrollbar {
-  height: 6px;
-}
-
-.mobile-columns-scroller::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.mobile-columns-scroller::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.5);
-  border-radius: 999px;
-}
-
-.mobile-column-panel {
-  flex: 0 0 calc(100vw - 3rem);
-  scroll-snap-align: center;
-  max-width: 420px;
-}
-
-@media (min-width: 480px) {
-  .mobile-column-panel {
-    flex-basis: calc(100vw - 6rem);
-  }
-}
-
-@media (max-width: 767px) {
-  .mobile-column :deep(.kanban-column) {
-    min-width: 320px;
-    max-width: 400px;
-    width: 100%;
-  }
-
-  .mobile-column :deep(.job-card) {
-    min-width: 280px;
-    width: 100%;
-    padding: 16px;
-  }
-
-  .mobile-column :deep(.p-1) {
-    padding: 12px;
-  }
-
-  .mobile-column :deep(.space-y-1 > * + *) {
-    margin-top: 8px;
-  }
-}
-
-.tablet-column {
-  min-width: 200px;
-  max-width: 280px;
-  width: 100%;
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-  .tablet-column {
-    width: calc((100% - 0.75rem) / 4);
-    min-width: 160px;
-    max-width: 200px;
-  }
-}
-
-@media (min-width: 768px) and (max-width: 1023px) {
-  .tablet-column :deep(.kanban-column) {
-    min-width: 160px;
-    max-width: 200px;
-    width: 100%;
-    height: fit-content;
-  }
 }
 
 [data-is-clone='true'] {
@@ -1067,46 +753,5 @@ onUnmounted(() => {
 .scroll-smooth {
   scrollbar-width: thin;
   scrollbar-color: #3b82f6 #f1f5f9;
-}
-
-/* Special styles for draft column drag and drop */
-.sortable-ghost-draft {
-  opacity: 0.4 !important;
-  background: #fef3c7 !important;
-  border: 2px dashed #f59e0b !important;
-  transform: rotate(2deg) !important;
-}
-
-.sortable-chosen-draft {
-  opacity: 0.9 !important;
-  transform: scale(1.05) !important;
-  box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3) !important;
-  border-color: #f59e0b !important;
-}
-
-.sortable-drag-draft {
-  opacity: 0.7 !important;
-  transform: rotate(-2deg) scale(1.02) !important;
-  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.4) !important;
-}
-
-/* Ensure draft column drop zones are always active */
-[data-status='draft'] {
-  min-height: 200px !important;
-}
-
-[data-status='draft']:empty::after {
-  content: 'Drop jobs here to set as Draft';
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100px;
-  color: #9ca3af;
-  font-size: 14px;
-  text-align: center;
-  border: 2px dashed #d1d5db;
-  border-radius: 8px;
-  margin: 8px;
-  background: #f9fafb;
 }
 </style>
