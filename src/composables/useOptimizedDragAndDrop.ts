@@ -16,6 +16,24 @@ export type OptimizedDragEventHandler = (event: string, payload: OptimizedDragEv
 export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler) {
   const isDragging = ref(false)
   const sortableInstances = ref<Map<string, Sortable>>(new Map())
+  let idleCleanupTimer: ReturnType<typeof setInterval> | null = null
+
+  // Periodically check for stuck drag state and log diagnostics
+  const startIdleCleanup = () => {
+    if (idleCleanupTimer) return
+    idleCleanupTimer = setInterval(() => {
+      const ghostEls = document.querySelectorAll('.sortable-ghost')
+      const chosenEls = document.querySelectorAll('.sortable-chosen')
+      const dragEls = document.querySelectorAll('.sortable-drag')
+      debugLog('IDLE CHECK', {
+        isDraggingRef: isDragging.value,
+        sortableGhosts: ghostEls.length,
+        sortableChosen: chosenEls.length,
+        sortableDrag: dragEls.length,
+        bodyHasDragging: document.body.classList.contains('is-dragging'),
+      })
+    }, 5_000)
+  }
 
   const initializeSortable = (element: HTMLElement, status: string) => {
     const existing = sortableInstances.value.get(status)
@@ -25,7 +43,7 @@ export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler)
     }
     if (!element || !element.isConnected) return
 
-    debugLog(`🔧 Creating Sortable for ${status}:`, {
+    debugLog(`Creating Sortable for ${status}:`, {
       children: element.children.length,
     })
 
@@ -39,6 +57,7 @@ export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler)
       fallbackOnBody: true,
       swapThreshold: 0.65,
       onStart: () => {
+        debugLog('DRAG START -- setting isDragging=true')
         isDragging.value = true
         document.body.classList.add('is-dragging')
       },
@@ -46,6 +65,7 @@ export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler)
         return true
       },
       onEnd: async (evt: SortableEvent) => {
+        debugLog('DRAG END -- setting isDragging=false')
         isDragging.value = false
         document.body.classList.remove('is-dragging')
 
@@ -77,7 +97,7 @@ export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler)
           newIndex < targetColumnJobs.length - 1 ? targetColumnJobs[newIndex + 1] : undefined
 
         // Debug positioning for ALL columns to see what's happening
-        debugLog(`🎯 DRAG POSITIONING: ${fromStatus} → ${toStatus}`, {
+        debugLog(`DRAG POSITIONING: ${fromStatus} -> ${toStatus}`, {
           jobId,
           newIndex,
           beforeId,
@@ -100,9 +120,14 @@ export function useOptimizedDragAndDrop(onDragEvent?: OptimizedDragEventHandler)
     const sortable = Sortable.create(element, sortableConfig)
 
     sortableInstances.value.set(status, sortable)
+    startIdleCleanup()
   }
 
   const destroyAllSortables = () => {
+    if (idleCleanupTimer) {
+      clearInterval(idleCleanupTimer)
+      idleCleanupTimer = null
+    }
     sortableInstances.value.forEach((sortable) => sortable.destroy())
     sortableInstances.value.clear()
     isDragging.value = false

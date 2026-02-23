@@ -9,7 +9,7 @@ export function useJobNotifications() {
   }
 
   const notifyJobLoaded = (jobName: string) => {
-    debugLog(`✅ Job ${jobName} loaded successfully`)
+    debugLog(`Job ${jobName} loaded successfully`)
   }
 
   const notifyJobError = (jobId: string, error: string) => {
@@ -50,7 +50,7 @@ export function useJobNotifications() {
 
   const notifyDataChanged = (dataType: string) => {
     // Reduced verbosity - only debug log for auto-save
-    debugLog(`🔄 ${dataType} changed - auto-saving`)
+    debugLog(`${dataType} changed - auto-saving`)
   }
 
   const notifyEventAdded = (eventType: string) => {

@@ -901,7 +901,7 @@ const activeJobsWithData = computed<ActiveJobWithData[]>(() => {
 
       // Skip jobs without timesheet entries (shouldn't happen since we're filtering by entries)
       if (actualHours === 0) {
-        debugLog(`⚠️ Job ${jobId} has 0 hours despite being in entries`)
+        debugLog(`Job ${jobId} has 0 hours despite being in entries`)
         return null
       }
 
@@ -931,9 +931,9 @@ const activeJobsWithData = computed<ActiveJobWithData[]>(() => {
             leave_type: typeof metaLeaveType === 'string' ? metaLeaveType : 'time',
           } as ModernTimesheetJob
 
-          debugLog(`🔧 Created minimal job object for ${jobId}:`, job)
+          debugLog(`Created minimal job object for ${jobId}:`, job)
         } else {
-          debugLog(`❌ Could not find or create job data for ${jobId}`)
+          debugLog(`Could not find or create job data for ${jobId}`)
           return null
         }
       }
@@ -946,7 +946,7 @@ const activeJobsWithData = computed<ActiveJobWithData[]>(() => {
       const completionPercentage = getCompletionPercentage(actualHours, estimatedHours)
       const isOverBudget = isJobOverBudget(actualHours, estimatedHours)
 
-      debugLog(`✅ Job ${job.job_number} (${jobId}):`, {
+      debugLog(`Job ${job.job_number} (${jobId}):`, {
         actualHours,
         estimatedHours,
         totalBill,
@@ -976,7 +976,7 @@ watch(
   async (newJobIds) => {
     if (newJobIds.length > 0) {
       debugLog(
-        '🔍 Jobs with timesheet entries changed, loading enhanced data for:',
+        'Jobs with timesheet entries changed, loading enhanced data for:',
         newJobIds.length,
         'jobs',
       )
@@ -1179,7 +1179,7 @@ const navigateDate = (direction: number) => {
 
   currentDate.value = `${newYear}-${newMonth}-${newDay}`
   debugLog(
-    '📅 Navigated to:',
+    'Navigated to:',
     currentDate.value,
     'Day of week:',
     date.getDay(),
@@ -1206,12 +1206,7 @@ const goToToday = () => {
   const day = String(today.getDate()).padStart(2, '0')
 
   currentDate.value = `${year}-${month}-${day}`
-  debugLog(
-    '📅 Going to today:',
-    currentDate.value,
-    'Weekend enabled:',
-    timesheetStore.weekendEnabled,
-  )
+  debugLog('Going to today:', currentDate.value, 'Weekend enabled:', timesheetStore.weekendEnabled)
   updateRoute()
 }
 
@@ -1730,7 +1725,7 @@ const loadTimesheetData = async () => {
     const staffData = timesheetStore.staff.find((s) => s.id === selectedStaffId.value)
     loadData(timeEntries.value, selectedStaffId.value, staffData)
 
-    debugLog(`✅ Loaded ${timeEntries.value.length} timesheet entries`)
+    debugLog(`Loaded ${timeEntries.value.length} timesheet entries`)
   } catch (err) {
     debugLog('Error loading timesheet data:', err)
     error.value = 'Failed to load timesheet data'
@@ -1824,7 +1819,7 @@ onMounted(async () => {
     debugLog('Available staff:', timesheetStore.staff.length)
     debugLog('Available jobs:', timesheetStore.jobs.length)
     debugLog(
-      '👤 Current staff for calculations:',
+      'Current staff for calculations:',
       currentStaffData?.name,
       'wage rate:',
       currentStaffData?.wageRate,

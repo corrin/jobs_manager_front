@@ -618,7 +618,7 @@ async function loadData(): Promise<void> {
     // Log successful load with weekend information
     const dayCount = weeklyData.value.week_days.length
     const expectedDays = weekendEnabled.value ? 7 : 5
-    debugLog(`✅ Weekly data loaded successfully: ${dayCount} days (expected: ${expectedDays})`)
+    debugLog(`Weekly data loaded successfully: ${dayCount} days (expected: ${expectedDays})`)
 
     // Warn if day count doesn't match expectation
     if (dayCount !== expectedDays) {
