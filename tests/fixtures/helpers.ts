@@ -11,15 +11,17 @@ let networkRunId: string | null = null
 let networkRunDate: string | null = null
 const networkCsvPath = path.join(process.cwd(), 'test-results', 'network-aggregate.csv')
 
-// Default max response size - catches bugs like missing filters
-// 200KB accommodates full-year reports (~3KB/week × 52 weeks)
-const DEFAULT_MAX_RESPONSE_KB = 200
+// Default max wire transfer size - catches bugs like missing filters
+// 100KB is generous: a 192KB JSON response compresses to ~60-80KB via gzip
+const DEFAULT_MAX_RESPONSE_KB = 100
 
 /**
- * Helper to log all API network traffic with sizes and assert on response size
- * Appends to test-results/network-aggregate.csv for later analysis
- * Fails test if any API response exceeds maxResponseKB (default 100KB)
- * Call once at start of test to enable logging for that page
+ * Helper to log all API network traffic with sizes and assert on response size.
+ * Measures **wire transfer size** (compressed) via Playwright's request.sizes(),
+ * not decompressed content size, so the limit reflects actual network cost.
+ * Appends to test-results/network-aggregate.csv for later analysis.
+ * Fails test if any API response exceeds maxResponseKB on the wire (default 100KB).
+ * Call once at start of test to enable logging for that page.
  */
 export function enableNetworkLogging(
   page: Page,
@@ -39,10 +41,12 @@ export function enableNetworkLogging(
     if (!existsSync(networkCsvPath)) {
       appendFileSync(
         networkCsvPath,
-        'run_id,run_date,test_name,method,url,status,size_bytes,size_kb\n',
+        'run_id,run_date,test_name,method,url,status,wire_size_bytes,wire_size_kb,content_size_bytes,content_size_kb\n',
       )
     }
   }
+
+  let compressionLogged = false
 
   page.on('response', async (response: Response) => {
     const url = response.url()
@@ -60,11 +64,29 @@ export function enableNetworkLogging(
     }
 
     try {
-      const body = await response.body()
-      const sizeBytes = body.length
-      const sizeKB = sizeBytes / 1024
+      const request = response.request()
+      const method = request.method()
       const status = response.status()
-      const method = response.request().method()
+
+      // Get wire size (compressed bytes on the wire)
+      const sizes = await request.sizes()
+      const wireSizeBytes = sizes.responseBodySize
+      const wireSizeKB = wireSizeBytes / 1024
+
+      // Get decompressed content size for logging
+      const body = await response.body()
+      const contentSizeBytes = body.length
+      const contentSizeKB = contentSizeBytes / 1024
+
+      // Log compression headers once per test for diagnostics
+      if (!compressionLogged) {
+        const acceptEncoding = request.headers()['accept-encoding'] ?? '(none)'
+        const contentEncoding = response.headers()['content-encoding'] ?? '(none)'
+        console.log(
+          `[NETWORK] Compression: Accept-Encoding: ${acceptEncoding}, Content-Encoding: ${contentEncoding}`,
+        )
+        compressionLogged = true
+      }
 
       // Append to CSV
       const row = [
@@ -74,15 +96,18 @@ export function enableNetworkLogging(
         method,
         `"${shortUrl.replace(/"/g, '""')}"`,
         status,
-        sizeBytes,
-        sizeKB.toFixed(2),
+        wireSizeBytes,
+        wireSizeKB.toFixed(2),
+        contentSizeBytes,
+        contentSizeKB.toFixed(2),
       ].join(',')
       appendFileSync(networkCsvPath, row + '\n')
 
-      // Assert response size - catch bugs like missing filters returning entire tables
-      if (sizeKB > maxResponseKB) {
+      // Assert on wire size (compressed transfer) - catch bugs like missing filters
+      if (wireSizeKB > maxResponseKB) {
         throw new Error(
-          `API response too large: ${method} ${shortUrl} returned ${sizeKB.toFixed(1)}KB (max: ${maxResponseKB}KB). ` +
+          `API response too large on wire: ${method} ${shortUrl} transferred ${wireSizeKB.toFixed(1)}KB ` +
+            `(decompressed: ${contentSizeKB.toFixed(1)}KB, max wire: ${maxResponseKB}KB). ` +
             `This may indicate a missing filter or pagination bug.`,
         )
       }
