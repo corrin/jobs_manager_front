@@ -128,6 +128,75 @@ const JobAgingJobData = z.object({
   timing_data: JobAgingTimingData,
 })
 const JobAgingResponse = z.object({ jobs: z.array(JobAgingJobData) })
+const PayrollDateRangeResponse = z.object({
+  aligned_start: z.string(),
+  aligned_end: z.string(),
+})
+const PayrollWeekTotals = z.object({
+  xero_gross: z.number(),
+  jm_cost: z.number(),
+  diff: z.number(),
+  xero_hours: z.number(),
+  jm_hours: z.number(),
+})
+const PayrollStaffWeek = z.object({
+  name: z.string(),
+  xero_hours: z.number(),
+  xero_timesheet_hours: z.number(),
+  xero_leave_hours: z.number(),
+  xero_gross: z.number(),
+  xero_rate: z.number(),
+  jm_hours: z.number(),
+  jm_cost: z.number(),
+  jm_rate: z.number(),
+  hours_diff: z.number(),
+  cost_diff: z.number(),
+  hours_cost_impact: z.number(),
+  rate_cost_impact: z.number(),
+  status: z.string(),
+})
+const PayrollWeek = z.object({
+  week_start: z.string(),
+  xero_period_start: z.string().nullable(),
+  xero_period_end: z.string().nullable(),
+  payment_date: z.string().nullable(),
+  totals: PayrollWeekTotals,
+  mismatch_count: z.number().int(),
+  staff: z.array(PayrollStaffWeek),
+})
+const PayrollStaffSummary = z.object({
+  name: z.string(),
+  xero_hours: z.number(),
+  xero_gross: z.number(),
+  jm_hours: z.number(),
+  jm_cost: z.number(),
+  hours_diff: z.number(),
+  cost_diff: z.number(),
+  hours_cost_impact: z.number(),
+  rate_cost_impact: z.number(),
+  weeks_present: z.number().int(),
+  weeks_with_mismatch: z.number().int(),
+})
+const PayrollHeatmapRow = z.object({
+  week_start: z.string(),
+  cells: z.record(z.number().nullable()),
+})
+const PayrollHeatmap = z.object({
+  staff_names: z.array(z.string()),
+  rows: z.array(PayrollHeatmapRow),
+})
+const PayrollGrandTotals = z.object({
+  xero_gross: z.number(),
+  jm_cost: z.number(),
+  diff: z.number(),
+  diff_pct: z.number(),
+})
+const PayrollReconciliationResponse = z.object({
+  weeks: z.array(PayrollWeek),
+  staff_summaries: z.array(PayrollStaffSummary),
+  heatmap: PayrollHeatmap,
+  grand_totals: PayrollGrandTotals,
+})
 const StaffPerformanceTeamAverages = z.object({
   billable_percentage: z.number(),
   revenue_per_hour: z.number(),
@@ -2595,6 +2664,15 @@ export const schemas = {
   JobAgingTimingData,
   JobAgingJobData,
   JobAgingResponse,
+  PayrollDateRangeResponse,
+  PayrollWeekTotals,
+  PayrollStaffWeek,
+  PayrollWeek,
+  PayrollStaffSummary,
+  PayrollHeatmapRow,
+  PayrollHeatmap,
+  PayrollGrandTotals,
+  PayrollReconciliationResponse,
   StaffPerformanceTeamAverages,
   StaffPerformanceJobBreakdown,
   StaffPerformanceStaffData,
@@ -2956,6 +3034,71 @@ Returns:
     description: `Handle GET request for job movement metrics.`,
     requestFormat: 'json',
     response: z.object({}).partial().passthrough(),
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/payroll-date-range/',
+    alias: 'accounting_api_reports_payroll_date_range_retrieve',
+    description: `Given arbitrary start/end dates, returns the Monday on or before start_date and the Sunday on or after end_date.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'end_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+      {
+        name: 'start_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
+    response: PayrollDateRangeResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({
+          error: z.string(),
+          details: z.unknown().optional(),
+        }),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/payroll-reconciliation/',
+    alias: 'accounting_api_reports_payroll_reconciliation_retrieve',
+    description: `Reconciles Xero pay runs against JM CostLine time entries for each week in the given date range.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'end_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+      {
+        name: 'start_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
+    response: PayrollReconciliationResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({
+          error: z.string(),
+          details: z.unknown().optional(),
+        }),
+      },
+      {
+        status: 500,
+        schema: z.object({
+          error: z.string(),
+          details: z.unknown().optional(),
+        }),
+      },
+    ],
   },
   {
     method: 'get',
