@@ -20,12 +20,12 @@ main() {
     git fetch origin main
     git reset --hard origin/main
     chmod +x scripts/deploy_frontend.sh
-    sudo chown -R "$CURRENT_USER:$CURRENT_USER" "$PROJECT_PATH"
+    chown -R "$CURRENT_USER:$CURRENT_USER" "$PROJECT_PATH"
 
-    # Ensure previous dependencies don't cause permission issues when npm ci prunes node_modules
+    # Clean previous dependencies before npm ci
     if [ -d node_modules ]; then
-        echo "Cleaning existing node_modules with sudo to avoid permission errors..."
-        sudo rm -rf node_modules
+        echo "Cleaning existing node_modules..."
+        rm -rf node_modules
     fi
 
     # Install dependencies and build
