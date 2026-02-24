@@ -201,41 +201,28 @@
                 v-if="activeDropdown === 'reports'"
                 class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
               >
+                <div
+                  class="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                >
+                  CRM
+                </div>
                 <router-link
                   to="/reports/clients"
                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
                 >
                   <Users class="w-4 h-4 mr-2" /> Clients
                 </router-link>
-                <router-link
-                  to="/reports/kpi"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                <div class="border-t border-gray-200 my-1"></div>
+                <div
+                  class="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider"
                 >
-                  <BarChart3 class="w-4 h-4 mr-2" /> KPI Reports
-                </router-link>
+                  Management
+                </div>
                 <router-link
                   to="/reports/job-aging"
                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
                 >
-                  <Clock class="w-4 h-4 mr-2" /> Job Aging Report
-                </router-link>
-                <router-link
-                  to="/reports/staff-performance"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-                >
-                  <Users class="w-4 h-4 mr-2" /> Staff Performance
-                </router-link>
-                <router-link
-                  to="/reports/sales-forecast"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-                >
-                  <TrendingUp class="w-4 h-4 mr-2" /> Sales Forecast
-                </router-link>
-                <router-link
-                  to="/reports/profit-and-loss"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-                >
-                  <FileText class="w-4 h-4 mr-2" /> Profit & Loss (Xero)
+                  <Clock class="w-4 h-4 mr-2" /> Job Aging
                 </router-link>
                 <router-link
                   to="/reports/job-movement"
@@ -250,10 +237,40 @@
                   <DollarSign class="w-4 h-4 mr-2" /> Job Profitability
                 </router-link>
                 <router-link
+                  to="/reports/kpi"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                >
+                  <BarChart3 class="w-4 h-4 mr-2" /> KPI Reports
+                </router-link>
+                <router-link
+                  to="/reports/sales-forecast"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                >
+                  <TrendingUp class="w-4 h-4 mr-2" /> Sales Forecast
+                </router-link>
+                <router-link
+                  to="/reports/staff-performance"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                >
+                  <Users class="w-4 h-4 mr-2" /> Staff Performance
+                </router-link>
+                <div class="border-t border-gray-200 my-1"></div>
+                <div
+                  class="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                >
+                  Reconciliation
+                </div>
+                <router-link
                   to="/reports/payroll-reconciliation"
                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
                 >
-                  <Scale class="w-4 h-4 mr-2" /> Payroll Reconciliation
+                  <Scale class="w-4 h-4 mr-2" /> Payroll (Xero)
+                </router-link>
+                <router-link
+                  to="/reports/profit-and-loss"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                >
+                  <FileText class="w-4 h-4 mr-2" /> Profit & Loss (Xero)
                 </router-link>
                 <div class="border-t border-gray-200 my-1"></div>
                 <div
@@ -610,6 +627,11 @@
                 >
                   <div v-if="mobileSections.reports" class="overflow-hidden">
                     <div class="px-3 pb-2 space-y-1">
+                      <div
+                        class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >
+                        CRM
+                      </div>
                       <router-link
                         to="/reports/clients"
                         class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
@@ -617,44 +639,22 @@
                       >
                         <Users class="w-4 h-4 mr-2" /> Clients
                       </router-link>
-                      <router-link
-                        to="/reports/kpi"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
+                      <div class="border-t border-gray-200 mt-2 mb-1"></div>
+                      <div
+                        class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider"
                       >
-                        <BarChart3 class="w-4 h-4 mr-2" /> KPI Reports
-                      </router-link>
+                        Management
+                      </div>
                       <router-link
                         to="/reports/job-aging"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
                       >
-                        <Clock class="w-4 h-4 mr-2" /> Job Aging Report
-                      </router-link>
-                      <router-link
-                        to="/reports/staff-performance"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
-                      >
-                        <Users class="w-4 h-4 mr-2" /> Staff Performance
-                      </router-link>
-                      <router-link
-                        to="/reports/sales-forecast"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
-                      >
-                        <TrendingUp class="w-4 h-4 mr-2" /> Sales Forecast
-                      </router-link>
-                      <router-link
-                        to="/reports/profit-and-loss"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
-                      >
-                        <FileText class="w-4 h-4 mr-2" /> Profit & Loss (Xero)
+                        <Clock class="w-4 h-4 mr-2" /> Job Aging
                       </router-link>
                       <router-link
                         to="/reports/job-movement"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
                       >
                         <TrendingUp class="w-4 h-4 mr-2" /> Job Movement
@@ -667,11 +667,45 @@
                         <DollarSign class="w-4 h-4 mr-2" /> Job Profitability
                       </router-link>
                       <router-link
+                        to="/reports/kpi"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                      >
+                        <BarChart3 class="w-4 h-4 mr-2" /> KPI Reports
+                      </router-link>
+                      <router-link
+                        to="/reports/sales-forecast"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                      >
+                        <TrendingUp class="w-4 h-4 mr-2" /> Sales Forecast
+                      </router-link>
+                      <router-link
+                        to="/reports/staff-performance"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                      >
+                        <Users class="w-4 h-4 mr-2" /> Staff Performance
+                      </router-link>
+                      <div class="border-t border-gray-200 mt-2 mb-1"></div>
+                      <div
+                        class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >
+                        Reconciliation
+                      </div>
+                      <router-link
                         to="/reports/payroll-reconciliation"
                         class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
                       >
-                        <Scale class="w-4 h-4 mr-2" /> Payroll Reconciliation
+                        <Scale class="w-4 h-4 mr-2" /> Payroll (Xero)
+                      </router-link>
+                      <router-link
+                        to="/reports/profit-and-loss"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                      >
+                        <FileText class="w-4 h-4 mr-2" /> Profit & Loss (Xero)
                       </router-link>
                       <div class="border-t border-gray-200 mt-2 mb-1"></div>
                       <div
@@ -681,7 +715,7 @@
                       </div>
                       <router-link
                         to="/reports/data-quality/archived-jobs"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-50 rounded transition-all"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
                       >
                         <AlertTriangle class="w-4 h-4 mr-2" /> Archived Jobs Validation
