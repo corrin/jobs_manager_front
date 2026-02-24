@@ -76,7 +76,10 @@
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm font-medium text-gray-600">Xero Total</p>
-                  <p class="text-2xl font-bold text-gray-900">
+                  <p
+                    class="text-2xl font-bold text-gray-900"
+                    data-automation-id="PayrollReconciliation-xero-total"
+                  >
                     {{ formatCurrency(data.grand_totals.xero_gross) }}
                   </p>
                 </div>
@@ -88,7 +91,10 @@
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm font-medium text-gray-600">JM Total</p>
-                  <p class="text-2xl font-bold text-gray-900">
+                  <p
+                    class="text-2xl font-bold text-gray-900"
+                    data-automation-id="PayrollReconciliation-jm-total"
+                  >
                     {{ formatCurrency(data.grand_totals.jm_cost) }}
                   </p>
                 </div>
@@ -103,6 +109,7 @@
                   <p
                     class="text-2xl font-bold"
                     :class="data.grand_totals.diff < 0 ? 'text-red-600' : 'text-green-600'"
+                    data-automation-id="PayrollReconciliation-diff-value"
                   >
                     {{ formatCurrency(data.grand_totals.diff) }}
                     <span class="text-sm font-normal">
@@ -136,6 +143,7 @@
           <div
             v-if="data && !loading && !error"
             class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden"
+            data-automation-id="PayrollReconciliation-heatmap"
           >
             <TooltipProvider :delay-duration="200">
               <div class="overflow-x-auto">
