@@ -42,6 +42,19 @@ Source files live in the `src/` directory:
 - **types/** – TypeScript interfaces
 - **views/** – Page‑level Vue components
 
+## Training Manual
+
+The staff training manual is built with VitePress and served at `/manual/` in production.
+
+```bash
+npm run manual:dev       # Dev server on port 5174 (hot-reload)
+npm run manual:build     # Production build to dist-manual/
+npm run manual:pdf       # Export as PDF
+npm run manual:screenshots  # Capture screenshots (needs running app + .env credentials)
+```
+
+Markdown source lives in `manual/`. Edit pages there and preview with `manual:dev`.
+
 ## Additional Documentation
 
 See `docs/overview.md` for a newcomer‑oriented explanation of the codebase.

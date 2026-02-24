@@ -19,7 +19,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "manual:dev": "vitepress dev manual",
+    "manual:dev": "vitepress dev manual --port 5174",
     "manual:build": "vitepress build manual",
     "manual:preview": "vitepress preview manual",
     "manual:pdf": "vitepress-export-pdf export manual",

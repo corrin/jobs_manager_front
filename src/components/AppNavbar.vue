@@ -171,12 +171,14 @@
                 >
                   <Wrench class="w-4 h-4 mr-2" /> Machine Maintenance
                 </button>
-                <button
-                  @click="showNotImplemented('Staff Training')"
-                  class="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 font-medium transition-all"
+                <a
+                  href="/manual/"
+                  target="_blank"
+                  @click="activeDropdown = null"
+                  class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-50 font-medium transition-all"
                 >
                   <GraduationCap class="w-4 h-4 mr-2" /> Staff Training
-                </button>
+                </a>
               </div>
             </Transition>
           </div>
@@ -590,12 +592,14 @@
                       >
                         <Wrench class="w-4 h-4 mr-2" /> Machine Maintenance
                       </button>
-                      <button
-                        @click="showNotImplementedMobile('Staff Training')"
-                        class="flex items-center w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
+                      <a
+                        href="/manual/"
+                        target="_blank"
+                        @click="closeMobileMenu()"
+                        class="flex items-center w-full text-left px-2 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded transition-all"
                       >
                         <GraduationCap class="w-4 h-4 mr-2" /> Staff Training
-                      </button>
+                      </a>
                     </div>
                   </div>
                 </Transition>
