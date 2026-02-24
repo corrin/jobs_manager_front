@@ -18,17 +18,28 @@ Pick the task you need to do:
 - [Assess & Price a Job](/quoting/assess-and-price) - Working out what to charge
 - [Send a Quote](/quoting/send-quote) - Getting the quote to the customer
 
+### Understanding Jobs
+
+- [Understanding Job Finances](/jobs/understanding-job-finances) - How estimates, quotes, and reality fit together
+- [Attach Files to a Job](/jobs/attach-files) - Drawings, photos, and documents
+
 ### Getting Work Done
 
 - [Schedule a Job](/scheduling/schedule-a-job) - Assigning work to staff
 - [Complete a Job On-Site](/fieldwork/complete-a-job) - What field staff do
 - [End of Day Entry](/timesheets/end-of-day-entry) - Recording your time
 
+### Purchasing
+
+- [Create a Purchase Order](/purchasing/create-purchase-order) - Ordering materials from suppliers
+
 ### Billing & Admin
 
 - [Invoice a Job](/invoicing/invoice-a-job) - Billing the customer
 - [Weekly Checklist](/end-of-week/weekly-checklist) - End of week procedures
 - [Run Reports](/management/run-reports) - Getting insights
+- [Run Payroll](/admin/run-payroll) - Reconciling timesheets with Xero payroll
+- [Manage Staff](/admin/manage-staff) - Adding and editing team members
 
 ---
 

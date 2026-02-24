@@ -37,12 +37,148 @@ const SCREENSHOTS: ScreenshotDef[] = [
     waitFor: '[data-automation-id="kanban-column"]',
   },
 
+  // === JOB CREATION ===
+  {
+    id: 'job-create-form',
+    description: 'Create new job form with client, name, and description fields',
+    route: '/jobs/create',
+    waitFor: 'form',
+  },
+
+  // === JOB DETAILS ===
+  {
+    id: 'job-details-form',
+    description: 'Job details form showing job number, name, client, and description',
+    route: '/kanban',
+    waitFor: '[data-automation-id="kanban-column"]',
+    prepare: async (page: Page) => {
+      // Click the first job card to open a job
+      const firstJob = page.locator('[data-automation-id="job-card"]').first()
+      if (await firstJob.isVisible()) {
+        await firstJob.click()
+        await page.waitForSelector('[data-automation-id="job-view"]', { timeout: 10000 })
+      }
+    },
+  },
+
+  // === JOB ESTIMATE TAB ===
+  {
+    id: 'job-estimate-tab',
+    description: 'Job Estimate tab showing time, materials, and adjustments grids',
+    route: '/kanban',
+    waitFor: '[data-automation-id="kanban-column"]',
+    prepare: async (page: Page) => {
+      const firstJob = page.locator('[data-automation-id="job-card"]').first()
+      if (await firstJob.isVisible()) {
+        await firstJob.click()
+        await page.waitForSelector('[data-automation-id="job-view"]', { timeout: 10000 })
+        // Click the Estimate tab
+        const estimateTab = page.getByRole('tab', { name: /estimate/i })
+        if (await estimateTab.isVisible()) await estimateTab.click()
+        await page.waitForTimeout(1000)
+      }
+    },
+    fullPage: true,
+  },
+
+  // === JOB QUOTE TAB ===
+  {
+    id: 'job-quote-tab',
+    description: 'Job Quote tab showing customer-facing pricing',
+    route: '/kanban',
+    waitFor: '[data-automation-id="kanban-column"]',
+    prepare: async (page: Page) => {
+      const firstJob = page.locator('[data-automation-id="job-card"]').first()
+      if (await firstJob.isVisible()) {
+        await firstJob.click()
+        await page.waitForSelector('[data-automation-id="job-view"]', { timeout: 10000 })
+        const quoteTab = page.getByRole('tab', { name: /quote/i })
+        if (await quoteTab.isVisible()) await quoteTab.click()
+        await page.waitForTimeout(1000)
+      }
+    },
+    fullPage: true,
+  },
+
+  // === JOB ACTUAL/REALITY TAB ===
+  {
+    id: 'job-actual-tab',
+    description: 'Job Reality/Actual tab showing real costs and revenue',
+    route: '/kanban',
+    waitFor: '[data-automation-id="kanban-column"]',
+    prepare: async (page: Page) => {
+      const firstJob = page.locator('[data-automation-id="job-card"]').first()
+      if (await firstJob.isVisible()) {
+        await firstJob.click()
+        await page.waitForSelector('[data-automation-id="job-view"]', { timeout: 10000 })
+        const actualTab = page.getByRole('tab', { name: /actual/i })
+        if (await actualTab.isVisible()) await actualTab.click()
+        await page.waitForTimeout(1000)
+      }
+    },
+    fullPage: true,
+  },
+
+  // === JOB ATTACHMENTS TAB ===
+  {
+    id: 'job-attachments-tab',
+    description: 'Job Attachments tab showing file upload area and attached files',
+    route: '/kanban',
+    waitFor: '[data-automation-id="kanban-column"]',
+    prepare: async (page: Page) => {
+      const firstJob = page.locator('[data-automation-id="job-card"]').first()
+      if (await firstJob.isVisible()) {
+        await firstJob.click()
+        await page.waitForSelector('[data-automation-id="job-view"]', { timeout: 10000 })
+        const attachTab = page.getByRole('tab', { name: /attachment/i })
+        if (await attachTab.isVisible()) await attachTab.click()
+        await page.waitForTimeout(1000)
+      }
+    },
+  },
+
   // === TIMESHEETS ===
   {
-    id: 'timesheet-daily-view',
-    description: 'Daily timesheet entry view',
+    id: 'timesheet-entry-grid',
+    description: 'Timesheet entry grid with staff selector, date picker, and hours',
+    route: '/timesheets/entry',
+    waitFor: 'main',
+  },
+  {
+    id: 'timesheet-daily-overview',
+    description: 'Daily timesheet overview with bar chart and staff hours',
     route: '/timesheets',
     waitFor: 'main',
+  },
+
+  // === PURCHASING ===
+  {
+    id: 'purchasing-po-list',
+    description: 'Purchase Orders list page',
+    route: '/purchasing/po',
+    waitFor: 'main',
+  },
+  {
+    id: 'purchasing-po-create',
+    description: 'Create Purchase Order form with supplier and reference fields',
+    route: '/purchasing/po/create',
+    waitFor: 'form',
+  },
+
+  // === REPORTS ===
+  {
+    id: 'kpi-report-overview',
+    description: 'KPI Report with summary cards and calendar heatmap',
+    route: '/reports/kpi',
+    waitFor: 'main',
+    fullPage: true,
+  },
+  {
+    id: 'payroll-reconciliation',
+    description: 'Payroll Reconciliation report with summary cards and heatmap grid',
+    route: '/reports/payroll-reconciliation',
+    waitFor: 'main',
+    fullPage: true,
   },
 
   // === CLIENTS ===
@@ -60,14 +196,12 @@ const SCREENSHOTS: ScreenshotDef[] = [
     route: '/company-defaults',
     waitFor: 'form',
   },
-
-  // Add more screenshots as needed...
-  // {
-  //   id: 'job-create-form',
-  //   description: 'Create new job form',
-  //   route: '/jobs/create',
-  //   waitFor: '[data-automation-id="job-form"]',
-  // },
+  {
+    id: 'admin-staff-list',
+    description: 'Staff Management page with staff table',
+    route: '/admin/staff',
+    waitFor: 'main',
+  },
 ]
 
 // Output paths

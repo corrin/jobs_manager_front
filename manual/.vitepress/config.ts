@@ -4,6 +4,9 @@ export default defineConfig({
   title: 'Jobs Manager Training Manual',
   description: 'How to do your job - a cookbook for staff',
 
+  // Served at /manual/ alongside the main app
+  base: '/manual/',
+
   // Output directory (relative to manual/ folder)
   outDir: '../dist-manual',
 
@@ -14,6 +17,13 @@ export default defineConfig({
       {
         text: 'Customer Contact',
         items: [{ text: 'New Customer Call', link: '/enquiries/new-customer-call' }],
+      },
+      {
+        text: 'Jobs',
+        items: [
+          { text: 'Understanding Job Finances', link: '/jobs/understanding-job-finances' },
+          { text: 'Attach Files to a Job', link: '/jobs/attach-files' },
+        ],
       },
       {
         text: 'Quoting',
@@ -35,16 +45,24 @@ export default defineConfig({
         items: [{ text: 'End of Day Entry', link: '/timesheets/end-of-day-entry' }],
       },
       {
+        text: 'Purchasing',
+        items: [{ text: 'Create a Purchase Order', link: '/purchasing/create-purchase-order' }],
+      },
+      {
         text: 'Invoicing',
         items: [{ text: 'Invoice a Job', link: '/invoicing/invoice-a-job' }],
       },
       {
-        text: 'Weekly Procedures',
+        text: 'Weekly & Monthly Procedures',
         items: [{ text: 'Weekly Checklist', link: '/end-of-week/weekly-checklist' }],
       },
       {
-        text: 'Management',
-        items: [{ text: 'Run Reports', link: '/management/run-reports' }],
+        text: 'Management & Admin',
+        items: [
+          { text: 'Run Reports', link: '/management/run-reports' },
+          { text: 'Run Payroll', link: '/admin/run-payroll' },
+          { text: 'Manage Staff', link: '/admin/manage-staff' },
+        ],
       },
     ],
 

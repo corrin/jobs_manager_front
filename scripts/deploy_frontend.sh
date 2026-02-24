@@ -40,6 +40,9 @@ main() {
 
     npm run build
 
+    # Build the training manual (served at /manual/)
+    npx vitepress build manual
+
     # Reload nginx to serve new build
     sudo systemctl reload nginx
 
