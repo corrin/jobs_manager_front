@@ -258,6 +258,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useFinancialYear } from '@/composables/useFinancialYear'
 import {
   fetchPayrollReconciliation,
+  fetchAlignedDateRange,
   exportPayrollReconciliationCsv,
   type PayrollReconciliationResponse,
 } from '@/services/payroll-reconciliation-report.service'
@@ -297,6 +298,10 @@ async function loadData() {
   loading.value = true
   error.value = null
   try {
+    const aligned = await fetchAlignedDateRange(dateRange.value.startDate, dateRange.value.endDate)
+    dateRange.value.startDate = aligned.aligned_start
+    dateRange.value.endDate = aligned.aligned_end
+
     data.value = await fetchPayrollReconciliation(
       dateRange.value.startDate,
       dateRange.value.endDate,

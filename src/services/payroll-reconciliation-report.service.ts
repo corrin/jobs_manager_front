@@ -7,6 +7,12 @@ import type { z } from 'zod'
 
 export type PayrollReconciliationResponse = z.infer<typeof schemas.PayrollReconciliationResponse>
 
+export async function fetchAlignedDateRange(startDate: string, endDate: string) {
+  return await api.accounting_api_reports_payroll_date_range_retrieve({
+    queries: { start_date: startDate, end_date: endDate },
+  })
+}
+
 export async function fetchPayrollReconciliation(
   startDate: string,
   endDate: string,

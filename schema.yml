@@ -81,6 +81,88 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /accounting/api/reports/payroll-date-range/:
+    get:
+      operationId: accounting_api_reports_payroll_date_range_retrieve
+      description: Given arbitrary start/end dates, returns the Monday on or before
+        start_date and the Sunday on or after end_date.
+      summary: Get pay-period aligned date range
+      parameters:
+        - in: query
+          name: end_date
+          schema:
+            type: string
+            format: date
+          description: End date to align (YYYY-MM-DD).
+          required: true
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date
+          description: Start date to align (YYYY-MM-DD).
+          required: true
+      tags:
+        - accounting
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollDateRangeResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardError'
+          description: ''
+  /accounting/api/reports/payroll-reconciliation/:
+    get:
+      operationId: accounting_api_reports_payroll_reconciliation_retrieve
+      description: Reconciles Xero pay runs against JM CostLine time entries for each
+        week in the given date range.
+      summary: Get payroll reconciliation report
+      parameters:
+        - in: query
+          name: end_date
+          schema:
+            type: string
+            format: date
+          description: Inclusive end date (YYYY-MM-DD).
+          required: true
+        - in: query
+          name: start_date
+          schema:
+            type: string
+            format: date
+          description: Inclusive start date (YYYY-MM-DD).
+          required: true
+      tags:
+        - accounting
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PayrollReconciliationResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardError'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardError'
+          description: ''
   /accounting/api/reports/profit-and-loss/:
     get:
       operationId: accounting_api_reports_profit_and_loss_retrieve
@@ -13395,6 +13477,257 @@ components:
         - fetched
         - synced
         - updated
+    PayrollDateRangeResponse:
+      type: object
+      description: Response for the pay-period date alignment endpoint.
+      properties:
+        aligned_start:
+          type: string
+          format: date
+        aligned_end:
+          type: string
+          format: date
+      required:
+        - aligned_end
+        - aligned_start
+    PayrollGrandTotals:
+      type: object
+      description: Grand totals across all weeks in the reporting window.
+      properties:
+        xero_gross:
+          type: number
+          format: double
+        jm_cost:
+          type: number
+          format: double
+        diff:
+          type: number
+          format: double
+        diff_pct:
+          type: number
+          format: double
+      required:
+        - diff
+        - diff_pct
+        - jm_cost
+        - xero_gross
+    PayrollHeatmap:
+      type: object
+      description: Week x staff cost-difference heatmap.
+      properties:
+        staff_names:
+          type: array
+          items:
+            type: string
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollHeatmapRow'
+      required:
+        - rows
+        - staff_names
+    PayrollHeatmapRow:
+      type: object
+      description: Single row in the heatmap grid (one week).
+      properties:
+        week_start:
+          type: string
+          format: date
+        cells:
+          type: object
+          additionalProperties:
+            type: number
+            format: double
+            nullable: true
+      required:
+        - cells
+        - week_start
+    PayrollReconciliationResponse:
+      type: object
+      description: Top-level response for the payroll reconciliation API.
+      properties:
+        weeks:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollWeek'
+        staff_summaries:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollStaffSummary'
+        heatmap:
+          $ref: '#/components/schemas/PayrollHeatmap'
+        grand_totals:
+          $ref: '#/components/schemas/PayrollGrandTotals'
+      required:
+        - grand_totals
+        - heatmap
+        - staff_summaries
+        - weeks
+    PayrollStaffSummary:
+      type: object
+      description: Per-staff aggregate across all weeks in the reporting window.
+      properties:
+        name:
+          type: string
+        xero_hours:
+          type: number
+          format: double
+        xero_gross:
+          type: number
+          format: double
+        jm_hours:
+          type: number
+          format: double
+        jm_cost:
+          type: number
+          format: double
+        hours_diff:
+          type: number
+          format: double
+        cost_diff:
+          type: number
+          format: double
+        hours_cost_impact:
+          type: number
+          format: double
+        rate_cost_impact:
+          type: number
+          format: double
+        weeks_present:
+          type: integer
+        weeks_with_mismatch:
+          type: integer
+      required:
+        - cost_diff
+        - hours_cost_impact
+        - hours_diff
+        - jm_cost
+        - jm_hours
+        - name
+        - rate_cost_impact
+        - weeks_present
+        - weeks_with_mismatch
+        - xero_gross
+        - xero_hours
+    PayrollStaffWeek:
+      type: object
+      description: Per-staff row within a single reconciliation week.
+      properties:
+        name:
+          type: string
+        xero_hours:
+          type: number
+          format: double
+        xero_timesheet_hours:
+          type: number
+          format: double
+        xero_leave_hours:
+          type: number
+          format: double
+        xero_gross:
+          type: number
+          format: double
+        xero_rate:
+          type: number
+          format: double
+        jm_hours:
+          type: number
+          format: double
+        jm_cost:
+          type: number
+          format: double
+        jm_rate:
+          type: number
+          format: double
+        hours_diff:
+          type: number
+          format: double
+        cost_diff:
+          type: number
+          format: double
+        hours_cost_impact:
+          type: number
+          format: double
+        rate_cost_impact:
+          type: number
+          format: double
+        status:
+          type: string
+      required:
+        - cost_diff
+        - hours_cost_impact
+        - hours_diff
+        - jm_cost
+        - jm_hours
+        - jm_rate
+        - name
+        - rate_cost_impact
+        - status
+        - xero_gross
+        - xero_hours
+        - xero_leave_hours
+        - xero_rate
+        - xero_timesheet_hours
+    PayrollWeek:
+      type: object
+      description: One week of reconciliation data (pay run vs JM CostLines).
+      properties:
+        week_start:
+          type: string
+          format: date
+        xero_period_start:
+          type: string
+          format: date
+          nullable: true
+        xero_period_end:
+          type: string
+          format: date
+          nullable: true
+        payment_date:
+          type: string
+          format: date
+          nullable: true
+        totals:
+          $ref: '#/components/schemas/PayrollWeekTotals'
+        mismatch_count:
+          type: integer
+        staff:
+          type: array
+          items:
+            $ref: '#/components/schemas/PayrollStaffWeek'
+      required:
+        - mismatch_count
+        - payment_date
+        - staff
+        - totals
+        - week_start
+        - xero_period_end
+        - xero_period_start
+    PayrollWeekTotals:
+      type: object
+      description: Aggregate totals for a single reconciliation week.
+      properties:
+        xero_gross:
+          type: number
+          format: double
+        jm_cost:
+          type: number
+          format: double
+        diff:
+          type: number
+          format: double
+        xero_hours:
+          type: number
+          format: double
+        jm_hours:
+          type: number
+          format: double
+      required:
+        - diff
+        - jm_cost
+        - jm_hours
+        - xero_gross
+        - xero_hours
     PostWeekToXeroRequest:
       type: object
       description: Request serializer for posting weekly timesheets to Xero

@@ -11,8 +11,9 @@ let networkRunId: string | null = null
 let networkRunDate: string | null = null
 const networkCsvPath = path.join(process.cwd(), 'test-results', 'network-aggregate.csv')
 
-// Default max response size (100KB) - catches bugs like missing filters
-const DEFAULT_MAX_RESPONSE_KB = 100
+// Default max response size - catches bugs like missing filters
+// 200KB accommodates full-year reports (~3KB/week × 52 weeks)
+const DEFAULT_MAX_RESPONSE_KB = 200
 
 /**
  * Helper to log all API network traffic with sizes and assert on response size
