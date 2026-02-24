@@ -249,6 +249,12 @@
                 >
                   <DollarSign class="w-4 h-4 mr-2" /> Job Profitability
                 </router-link>
+                <router-link
+                  to="/reports/payroll-reconciliation"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                >
+                  <Scale class="w-4 h-4 mr-2" /> Payroll Reconciliation
+                </router-link>
                 <div class="border-t border-gray-200 my-1"></div>
                 <div
                   class="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider"
@@ -660,7 +666,13 @@
                       >
                         <DollarSign class="w-4 h-4 mr-2" /> Job Profitability
                       </router-link>
+                      <router-link
+                        to="/reports/payroll-reconciliation"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
                       >
+                        <Scale class="w-4 h-4 mr-2" /> Payroll Reconciliation
+                      </router-link>
                       <div class="border-t border-gray-200 mt-2 mb-1"></div>
                       <div
                         class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider"
@@ -757,6 +769,7 @@ import {
   Clock3,
   Users,
   DollarSign,
+  Scale,
 } from 'lucide-vue-next'
 import { toast } from 'vue-sonner'
 import { useAppLayout } from '@/composables/useAppLayout'
