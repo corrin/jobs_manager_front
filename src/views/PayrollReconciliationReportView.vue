@@ -132,7 +132,109 @@
             </div>
           </div>
 
-          <!-- Heatmap will go here in next task -->
+          <!-- Heatmap Grid -->
+          <div
+            v-if="data && !loading && !error"
+            class="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden"
+          >
+            <TooltipProvider :delay-duration="200">
+              <div class="overflow-x-auto">
+                <table class="min-w-full">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th
+                        class="sticky left-0 z-10 bg-gray-50 px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200"
+                      >
+                        Week
+                      </th>
+                      <th
+                        v-for="name in data.heatmap.staff_names"
+                        :key="name"
+                        class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                      >
+                        {{ name }}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-100">
+                    <tr v-for="row in data.heatmap.rows" :key="row.week_start">
+                      <td
+                        class="sticky left-0 z-10 bg-white px-3 py-2 text-sm font-medium text-gray-700 whitespace-nowrap border-r border-gray-200"
+                      >
+                        {{ row.week_start }}
+                      </td>
+                      <td
+                        v-for="name in data.heatmap.staff_names"
+                        :key="name"
+                        class="px-3 py-2 text-center text-xs font-medium whitespace-nowrap"
+                        :class="heatmapCellClass(row.cells[name] ?? null)"
+                      >
+                        <Tooltip>
+                          <TooltipTrigger as-child>
+                            <span class="block w-full cursor-default">
+                              {{ formatCellValue(row.cells[name] ?? null) }}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent
+                            v-if="getStaffWeekDetail(row.week_start, name)"
+                            class="max-w-xs"
+                          >
+                            <div class="text-xs space-y-1">
+                              <p class="font-semibold">{{ name }} — {{ row.week_start }}</p>
+                              <div class="grid grid-cols-2 gap-x-3">
+                                <span class="text-gray-400">Xero:</span>
+                                <span>
+                                  {{ getStaffWeekDetail(row.week_start, name)!.xero_hours }}h /
+                                  {{
+                                    formatCurrency(
+                                      getStaffWeekDetail(row.week_start, name)!.xero_gross,
+                                    )
+                                  }}
+                                </span>
+                                <span class="text-gray-400">JM:</span>
+                                <span>
+                                  {{ getStaffWeekDetail(row.week_start, name)!.jm_hours }}h /
+                                  {{
+                                    formatCurrency(
+                                      getStaffWeekDetail(row.week_start, name)!.jm_cost,
+                                    )
+                                  }}
+                                </span>
+                                <span class="text-gray-400">Gap:</span>
+                                <span>
+                                  {{
+                                    formatCurrency(
+                                      getStaffWeekDetail(row.week_start, name)!.cost_diff,
+                                    )
+                                  }}
+                                </span>
+                                <span class="text-gray-400 pl-2">Hours:</span>
+                                <span>
+                                  {{
+                                    formatCurrency(
+                                      getStaffWeekDetail(row.week_start, name)!.hours_cost_impact,
+                                    )
+                                  }}
+                                </span>
+                                <span class="text-gray-400 pl-2">Rate:</span>
+                                <span>
+                                  {{
+                                    formatCurrency(
+                                      getStaffWeekDetail(row.week_start, name)!.rate_cost_impact,
+                                    )
+                                  }}
+                                </span>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </TooltipProvider>
+          </div>
         </div>
       </div>
     </div>
@@ -144,6 +246,7 @@ import { ref, onMounted } from 'vue'
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Scale, Download, RefreshCw, AlertCircle, DollarSign } from 'lucide-vue-next'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useFinancialYear } from '@/composables/useFinancialYear'
 import {
   fetchPayrollReconciliation,
@@ -205,6 +308,35 @@ function refreshData() {
 
 function exportToCsv() {
   if (data.value) exportPayrollReconciliationCsv(data.value)
+}
+
+function heatmapCellClass(value: number | null): string {
+  if (value === null) return 'bg-gray-100 text-gray-400'
+  const abs = Math.abs(value)
+  if (abs < 1) return 'bg-green-100 text-green-800'
+  if (value < 0) {
+    if (abs < 50) return 'bg-red-100 text-red-700'
+    if (abs < 200) return 'bg-red-200 text-red-800'
+    if (abs < 500) return 'bg-red-300 text-red-900'
+    return 'bg-red-400 text-red-950'
+  }
+  if (abs < 50) return 'bg-blue-100 text-blue-700'
+  if (abs < 200) return 'bg-blue-200 text-blue-800'
+  if (abs < 500) return 'bg-blue-300 text-blue-900'
+  return 'bg-blue-400 text-blue-950'
+}
+
+function formatCellValue(value: number | null): string {
+  if (value === null) return ''
+  if (Math.abs(value) < 1) return '$0'
+  return formatCurrency(value)
+}
+
+function getStaffWeekDetail(weekStart: string, staffName: string) {
+  if (!data.value) return null
+  const week = data.value.weeks.find((w) => w.week_start === weekStart)
+  if (!week) return null
+  return week.staff.find((s) => s.name === staffName) ?? null
 }
 
 onMounted(() => {
