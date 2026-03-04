@@ -270,6 +270,24 @@ const router = createRouter({
       meta: { requiresAuth: true, title: 'Payroll Reconciliation - Jobs Manager' },
     },
     {
+      path: '/process-documents',
+      name: 'process-documents',
+      component: () => import('@/views/ProcessDocumentsView.vue'),
+      meta: { requiresAuth: true, title: 'Process Documents - Jobs Manager' },
+    },
+    {
+      path: '/process-documents/forms/:id',
+      name: 'form-entries',
+      component: () => import('@/views/FormEntriesView.vue'),
+      meta: { requiresAuth: true, title: 'Form Entries - Jobs Manager' },
+    },
+    {
+      path: '/process-documents/:id',
+      name: 'process-document-detail',
+      component: () => import('@/views/ProcessDocumentDetailView.vue'),
+      meta: { requiresAuth: true, title: 'Process Document - Jobs Manager' },
+    },
+    {
       path: '/safety/jsa',
       name: 'safety-jsa',
       component: () => import('@/views/SafetyJsaView.vue'),
