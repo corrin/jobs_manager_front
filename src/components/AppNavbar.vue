@@ -153,24 +153,30 @@
                 class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
               >
                 <RouterLink
+                  to="/process-documents"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                >
+                  <FileText class="w-4 h-4 mr-2" /> Procedures
+                </RouterLink>
+                <div class="border-t border-gray-200 my-1"></div>
+                <template v-if="processDocsStore.formTemplates.length > 0">
+                  <RouterLink
+                    v-for="tmpl in processDocsStore.formTemplates"
+                    :key="tmpl.id"
+                    :to="`/process-documents/forms/${tmpl.id}`"
+                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                  >
+                    <ClipboardList class="w-4 h-4 mr-2" /> {{ tmpl.title }}
+                  </RouterLink>
+                </template>
+                <div v-else class="px-4 py-2 text-sm text-gray-400 italic">No forms configured</div>
+                <div class="border-t border-gray-200 my-1"></div>
+                <RouterLink
                   to="/safety/jsa"
                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
                 >
                   <ShieldCheck class="w-4 h-4 mr-2" /> Job Safety Analyses
                 </RouterLink>
-                <RouterLink
-                  to="/safety/swp"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-                >
-                  <ClipboardList class="w-4 h-4 mr-2" /> Safe Work Procedures
-                </RouterLink>
-                <div class="border-t border-gray-200 my-1"></div>
-                <button
-                  @click="showNotImplemented('Machine Maintenance Schedule')"
-                  class="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 font-medium transition-all"
-                >
-                  <Wrench class="w-4 h-4 mr-2" /> Machine Maintenance
-                </button>
                 <a
                   href="/manual/"
                   target="_blank"
@@ -570,28 +576,35 @@
                   <div v-if="mobileSections.safety" class="overflow-hidden">
                     <div class="px-3 pb-2 space-y-1">
                       <RouterLink
+                        to="/process-documents"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                      >
+                        <FileText class="w-4 h-4 mr-2" /> Procedures
+                      </RouterLink>
+                      <div class="border-t border-gray-200 my-1"></div>
+                      <template v-if="processDocsStore.formTemplates.length > 0">
+                        <RouterLink
+                          v-for="tmpl in processDocsStore.formTemplates"
+                          :key="tmpl.id"
+                          :to="`/process-documents/forms/${tmpl.id}`"
+                          class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                          @click="closeMobileMenu"
+                        >
+                          <ClipboardList class="w-4 h-4 mr-2" /> {{ tmpl.title }}
+                        </RouterLink>
+                      </template>
+                      <div v-else class="px-2 py-1.5 text-sm text-gray-400 italic">
+                        No forms configured
+                      </div>
+                      <div class="border-t border-gray-200 my-1"></div>
+                      <RouterLink
                         to="/safety/jsa"
                         class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
                       >
                         <ShieldCheck class="w-4 h-4 mr-2" /> Job Safety Analyses
                       </RouterLink>
-                      >
-                      <RouterLink
-                        to="/safety/swp"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
-                      >
-                        <ClipboardList class="w-4 h-4 mr-2" /> Safe Work Procedures
-                      </RouterLink>
-                      >
-                      <div class="border-t border-gray-200 my-1"></div>
-                      <button
-                        @click="showNotImplementedMobile('Machine Maintenance Schedule')"
-                        class="flex items-center w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
-                      >
-                        <Wrench class="w-4 h-4 mr-2" /> Machine Maintenance
-                      </button>
                       <a
                         href="/manual/"
                         target="_blank"
@@ -802,16 +815,15 @@ import {
   TrendingUp,
   ShieldCheck,
   ClipboardList,
-  Wrench,
   GraduationCap,
   Clock3,
   Users,
   DollarSign,
   Scale,
 } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
 import { useAppLayout } from '@/composables/useAppLayout'
 import { adminPages } from '@/config/adminPages'
+import { useProcessDocumentsStore } from '@/stores/processDocuments'
 import WorkshopOfficeToggle from '@/components/board/WorkshopOfficeToggle.vue'
 
 const router = useRouter()
@@ -869,6 +881,8 @@ const mobileSections = ref<Record<MobileSection, boolean>>({
 const { userInfo, handleLogout } = useAppLayout()
 const isOfficeStaff = computed(() => !!userInfo.value?.is_office_staff)
 
+const processDocsStore = useProcessDocumentsStore()
+
 const kanbanNav = computed(() =>
   isOfficeStaff.value
     ? { label: 'Kanban Board', to: '/kanban' }
@@ -907,16 +921,6 @@ const toggleMobileSection = (section: MobileSection) => {
   mobileSections.value[section] = !mobileSections.value[section]
 }
 
-const showNotImplemented = (feature: string) => {
-  toast.info(`${feature} is not yet implemented`)
-  activeDropdown.value = null
-}
-
-const showNotImplementedMobile = (feature: string) => {
-  showNotImplemented(feature)
-  closeMobileMenu()
-}
-
 let clickHandler: ((e: MouseEvent) => void) | null = null
 
 onMounted(() => {
@@ -929,6 +933,8 @@ onMounted(() => {
     if (!insideDropdown) activeDropdown.value = null
   }
   document.addEventListener('click', clickHandler)
+
+  processDocsStore.loadFormTemplates()
 })
 
 onUnmounted(() => {
