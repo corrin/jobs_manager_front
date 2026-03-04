@@ -4500,7 +4500,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SafetyDocumentList'
+                  $ref: '#/components/schemas/ProcessDocumentList'
           description: ''
   /job/rest/jobs/{job_id}/jsa/generate/:
     post:
@@ -4522,7 +4522,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SafetyDocument'
+                $ref: '#/components/schemas/ProcessDocument'
           description: ''
   /job/rest/jobs/{job_id}/quote/:
     get:
@@ -5007,6 +5007,563 @@ paths:
               schema:
                 $ref: '#/components/schemas/MonthEndPostResponse'
           description: ''
+  /job/rest/process-documents/:
+    get:
+      operationId: job_rest_process_documents_list
+      description: |-
+        ViewSet for ProcessDocument CRUD operations.
+
+        Endpoints:
+        - GET    /rest/process-documents/              - list all documents
+        - POST   /rest/process-documents/              - create document
+        - GET    /rest/process-documents/<id>/         - retrieve document
+        - PUT    /rest/process-documents/<id>/         - update document
+        - PATCH  /rest/process-documents/<id>/         - partial update document
+        - DELETE /rest/process-documents/<id>/         - delete document
+
+        Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.
+      parameters:
+        - in: query
+          name: is_template
+          schema:
+            type: string
+          description: Filter by template flag (true/false)
+        - in: query
+          name: parent_template_id
+          schema:
+            type: string
+          description: Filter by parent template UUID
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Search by title
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Filter by status (draft/active/completed/archived)
+        - in: query
+          name: tags
+          schema:
+            type: string
+          description: Comma-separated tags; ALL must match
+        - in: query
+          name: type
+          schema:
+            type: string
+          description: Filter by document type (procedure/form/register/reference)
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProcessDocumentList'
+          description: ''
+    post:
+      operationId: job_rest_process_documents_create
+      description: |-
+        ViewSet for ProcessDocument CRUD operations.
+
+        Endpoints:
+        - GET    /rest/process-documents/              - list all documents
+        - POST   /rest/process-documents/              - create document
+        - GET    /rest/process-documents/<id>/         - retrieve document
+        - PUT    /rest/process-documents/<id>/         - update document
+        - PATCH  /rest/process-documents/<id>/         - partial update document
+        - DELETE /rest/process-documents/<id>/         - delete document
+
+        Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentCreateRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDocument'
+          description: ''
+  /job/rest/process-documents/{document_pk}/entries/:
+    get:
+      operationId: job_rest_process_documents_entries_list
+      description: |-
+        CRUD endpoints for ProcessDocumentEntry, nested under a document.
+
+        Endpoints:
+        - GET    /rest/process-documents/<id>/entries/              - list entries
+        - POST   /rest/process-documents/<id>/entries/              - create entry
+        - PUT    /rest/process-documents/<id>/entries/<entry_id>/   - update entry
+        - DELETE /rest/process-documents/<id>/entries/<entry_id>/   - delete entry
+      parameters:
+        - in: path
+          name: document_pk
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProcessDocumentEntry'
+          description: ''
+    post:
+      operationId: job_rest_process_documents_entries_create
+      description: |-
+        CRUD endpoints for ProcessDocumentEntry, nested under a document.
+
+        Endpoints:
+        - GET    /rest/process-documents/<id>/entries/              - list entries
+        - POST   /rest/process-documents/<id>/entries/              - create entry
+        - PUT    /rest/process-documents/<id>/entries/<entry_id>/   - update entry
+        - DELETE /rest/process-documents/<id>/entries/<entry_id>/   - delete entry
+      parameters:
+        - in: path
+          name: document_pk
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentEntryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentEntryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentEntryRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDocumentEntry'
+          description: ''
+  /job/rest/process-documents/{document_pk}/entries/{id}/:
+    put:
+      operationId: job_rest_process_documents_entries_update
+      description: |-
+        CRUD endpoints for ProcessDocumentEntry, nested under a document.
+
+        Endpoints:
+        - GET    /rest/process-documents/<id>/entries/              - list entries
+        - POST   /rest/process-documents/<id>/entries/              - create entry
+        - PUT    /rest/process-documents/<id>/entries/<entry_id>/   - update entry
+        - DELETE /rest/process-documents/<id>/entries/<entry_id>/   - delete entry
+      parameters:
+        - in: path
+          name: document_pk
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentEntryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentEntryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentEntryRequest'
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDocumentEntry'
+          description: ''
+    patch:
+      operationId: job_rest_process_documents_entries_partial_update
+      description: |-
+        CRUD endpoints for ProcessDocumentEntry, nested under a document.
+
+        Endpoints:
+        - GET    /rest/process-documents/<id>/entries/              - list entries
+        - POST   /rest/process-documents/<id>/entries/              - create entry
+        - PUT    /rest/process-documents/<id>/entries/<entry_id>/   - update entry
+        - DELETE /rest/process-documents/<id>/entries/<entry_id>/   - delete entry
+      parameters:
+        - in: path
+          name: document_pk
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProcessDocumentEntryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProcessDocumentEntryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProcessDocumentEntryRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDocumentEntry'
+          description: ''
+    delete:
+      operationId: job_rest_process_documents_entries_destroy
+      description: |-
+        CRUD endpoints for ProcessDocumentEntry, nested under a document.
+
+        Endpoints:
+        - GET    /rest/process-documents/<id>/entries/              - list entries
+        - POST   /rest/process-documents/<id>/entries/              - create entry
+        - PUT    /rest/process-documents/<id>/entries/<entry_id>/   - update entry
+        - DELETE /rest/process-documents/<id>/entries/<entry_id>/   - delete entry
+      parameters:
+        - in: path
+          name: document_pk
+          schema:
+            type: string
+            format: uuid
+          required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /job/rest/process-documents/{id}/:
+    get:
+      operationId: job_rest_process_documents_retrieve
+      description: |-
+        ViewSet for ProcessDocument CRUD operations.
+
+        Endpoints:
+        - GET    /rest/process-documents/              - list all documents
+        - POST   /rest/process-documents/              - create document
+        - GET    /rest/process-documents/<id>/         - retrieve document
+        - PUT    /rest/process-documents/<id>/         - update document
+        - PATCH  /rest/process-documents/<id>/         - partial update document
+        - DELETE /rest/process-documents/<id>/         - delete document
+
+        Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Process Document.
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDocument'
+          description: ''
+    put:
+      operationId: job_rest_process_documents_update
+      description: |-
+        ViewSet for ProcessDocument CRUD operations.
+
+        Endpoints:
+        - GET    /rest/process-documents/              - list all documents
+        - POST   /rest/process-documents/              - create document
+        - GET    /rest/process-documents/<id>/         - retrieve document
+        - PUT    /rest/process-documents/<id>/         - update document
+        - PATCH  /rest/process-documents/<id>/         - partial update document
+        - DELETE /rest/process-documents/<id>/         - delete document
+
+        Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Process Document.
+          required: true
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentUpdateRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDocument'
+          description: ''
+    patch:
+      operationId: job_rest_process_documents_partial_update
+      description: |-
+        ViewSet for ProcessDocument CRUD operations.
+
+        Endpoints:
+        - GET    /rest/process-documents/              - list all documents
+        - POST   /rest/process-documents/              - create document
+        - GET    /rest/process-documents/<id>/         - retrieve document
+        - PUT    /rest/process-documents/<id>/         - update document
+        - PATCH  /rest/process-documents/<id>/         - partial update document
+        - DELETE /rest/process-documents/<id>/         - delete document
+
+        Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Process Document.
+          required: true
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProcessDocumentUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProcessDocumentUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProcessDocumentUpdateRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDocument'
+          description: ''
+    delete:
+      operationId: job_rest_process_documents_destroy
+      description: |-
+        ViewSet for ProcessDocument CRUD operations.
+
+        Endpoints:
+        - GET    /rest/process-documents/              - list all documents
+        - POST   /rest/process-documents/              - create document
+        - GET    /rest/process-documents/<id>/         - retrieve document
+        - PUT    /rest/process-documents/<id>/         - update document
+        - PATCH  /rest/process-documents/<id>/         - partial update document
+        - DELETE /rest/process-documents/<id>/         - delete document
+
+        Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          description: A UUID string identifying this Process Document.
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /job/rest/process-documents/{id}/complete/:
+    post:
+      operationId: job_rest_process_documents_complete_create
+      description: Mark a document as completed (read-only).
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDocument'
+          description: ''
+  /job/rest/process-documents/{id}/content/:
+    get:
+      operationId: job_rest_process_documents_content_retrieve
+      description: |-
+        GET/PUT content for a process document stored in Google Docs.
+
+        - GET: Fetch current content from Google Docs
+        - PUT: Push updated content to Google Docs
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDocumentContentResponse'
+          description: ''
+    put:
+      operationId: job_rest_process_documents_content_update
+      description: |-
+        GET/PUT content for a process document stored in Google Docs.
+
+        - GET: Fetch current content from Google Docs
+        - PUT: Push updated content to Google Docs
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentContentUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentContentUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProcessDocumentContentUpdateRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDocument'
+          description: ''
+  /job/rest/process-documents/{id}/fill/:
+    post:
+      operationId: job_rest_process_documents_fill_create
+      description: Create a new record from a template.
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      tags:
+        - job
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FillRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FillRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FillRequestRequest'
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessDocument'
+          description: ''
   /job/rest/reports/job-profitability/:
     get:
       operationId: job_profitability_report
@@ -5169,161 +5726,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ImproveSectionResponse'
           description: ''
-  /job/rest/safety-documents/:
-    get:
-      operationId: job_rest_safety_documents_list
-      description: |-
-        ViewSet for SafetyDocument CRUD operations.
-
-        Endpoints:
-        - GET    /rest/safety-documents/              - list all documents
-        - GET    /rest/safety-documents/<id>/         - retrieve document
-        - DELETE /rest/safety-documents/<id>/         - delete document
-
-        Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.
-      parameters:
-        - in: query
-          name: q
-          schema:
-            type: string
-          description: Search by title
-        - in: query
-          name: type
-          schema:
-            type: string
-          description: Filter by document type (jsa/swp/sop)
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/SafetyDocumentList'
-          description: ''
-  /job/rest/safety-documents/{id}/:
-    get:
-      operationId: job_rest_safety_documents_retrieve
-      description: |-
-        ViewSet for SafetyDocument CRUD operations.
-
-        Endpoints:
-        - GET    /rest/safety-documents/              - list all documents
-        - GET    /rest/safety-documents/<id>/         - retrieve document
-        - DELETE /rest/safety-documents/<id>/         - delete document
-
-        Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          description: A UUID string identifying this Safety Document.
-          required: true
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocument'
-          description: ''
-    delete:
-      operationId: job_rest_safety_documents_destroy
-      description: |-
-        ViewSet for SafetyDocument CRUD operations.
-
-        Endpoints:
-        - GET    /rest/safety-documents/              - list all documents
-        - GET    /rest/safety-documents/<id>/         - retrieve document
-        - DELETE /rest/safety-documents/<id>/         - delete document
-
-        Note: Content endpoints (GET/PUT) are handled by SafetyDocumentContentView.
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          description: A UUID string identifying this Safety Document.
-          required: true
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-      responses:
-        '204':
-          description: No response body
-  /job/rest/safety-documents/{id}/content/:
-    get:
-      operationId: job_rest_safety_documents_content_retrieve
-      description: |-
-        GET/PUT content for a safety document stored in Google Docs.
-
-        - GET: Fetch current content from Google Docs
-        - PUT: Push updated content to Google Docs
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          required: true
-      tags:
-        - job
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocumentContentResponse'
-          description: ''
-    put:
-      operationId: job_rest_safety_documents_content_update
-      description: |-
-        GET/PUT content for a safety document stored in Google Docs.
-
-        - GET: Fetch current content from Google Docs
-        - PUT: Push updated content to Google Docs
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          required: true
-      tags:
-        - job
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/SafetyDocumentContentUpdateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/SafetyDocumentContentUpdateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/SafetyDocumentContentUpdateRequest'
-      security:
-        - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SafetyDocument'
-          description: ''
   /job/rest/sop/:
     get:
       operationId: job_rest_sop_list
@@ -5339,7 +5741,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SafetyDocumentList'
+                  $ref: '#/components/schemas/ProcessDocumentList'
           description: ''
   /job/rest/sop/generate/:
     post:
@@ -5366,7 +5768,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SafetyDocument'
+                $ref: '#/components/schemas/ProcessDocument'
           description: ''
   /job/rest/swp/:
     get:
@@ -5383,7 +5785,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SafetyDocumentList'
+                  $ref: '#/components/schemas/ProcessDocumentList'
           description: ''
   /job/rest/swp/generate/:
     post:
@@ -5410,7 +5812,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SafetyDocument'
+                $ref: '#/components/schemas/ProcessDocument'
           description: ''
   /job/rest/timesheet/entries/:
     get:
@@ -8102,6 +8504,27 @@ components:
           nullable: true
           description: Google Drive folder ID for storing quotes
           maxLength: 100
+        google_shared_drive_id:
+          type: string
+          nullable: true
+          description: Google Shared Drive ID for the company shared drive
+          maxLength: 100
+        gdrive_how_we_work_folder_id:
+          type: string
+          nullable: true
+          description: Folder ID for '01 - How we work' (policies, basics)
+          maxLength: 100
+        gdrive_sops_folder_id:
+          type: string
+          nullable: true
+          description: Folder ID for '02 - SOPs' (standard operating procedures)
+          maxLength: 100
+        gdrive_reference_library_folder_id:
+          type: string
+          nullable: true
+          description: Folder ID for '03 - Reference Library' (reference documents,
+            forms, registers)
+          maxLength: 100
         xero_tenant_id:
           type: string
           nullable: true
@@ -8408,6 +8831,27 @@ components:
           type: string
           nullable: true
           description: Google Drive folder ID for storing quotes
+          maxLength: 100
+        google_shared_drive_id:
+          type: string
+          nullable: true
+          description: Google Shared Drive ID for the company shared drive
+          maxLength: 100
+        gdrive_how_we_work_folder_id:
+          type: string
+          nullable: true
+          description: Folder ID for '01 - How we work' (policies, basics)
+          maxLength: 100
+        gdrive_sops_folder_id:
+          type: string
+          nullable: true
+          description: Folder ID for '02 - SOPs' (standard operating procedures)
+          maxLength: 100
+        gdrive_reference_library_folder_id:
+          type: string
+          nullable: true
+          description: Folder ID for '03 - Reference Library' (reference documents,
+            forms, registers)
           maxLength: 100
         xero_tenant_id:
           type: string
@@ -9442,14 +9886,16 @@ components:
         - id
     DocumentTypeEnum:
       enum:
-        - jsa
-        - swp
-        - sop
+        - procedure
+        - form
+        - register
+        - reference
       type: string
       description: |-
-        * `jsa` - Job Safety Analysis
-        * `swp` - Safe Work Procedure
-        * `sop` - Standard Operating Procedure
+        * `procedure` - Procedure
+        * `form` - Form
+        * `register` - Register
+        * `reference` - Reference
     DraftLine:
       type: object
       description: Serializer for draft line data.
@@ -9626,6 +10072,13 @@ components:
             type: string
         error:
           type: string
+    FillRequestRequest:
+      type: object
+      properties:
+        job_id:
+          type: string
+          format: uuid
+          nullable: true
     FiltersApplied:
       type: object
       description: Echo of the filters that were applied.
@@ -12750,6 +13203,27 @@ components:
           nullable: true
           description: Google Drive folder ID for storing quotes
           maxLength: 100
+        google_shared_drive_id:
+          type: string
+          nullable: true
+          description: Google Shared Drive ID for the company shared drive
+          maxLength: 100
+        gdrive_how_we_work_folder_id:
+          type: string
+          nullable: true
+          description: Folder ID for '01 - How we work' (policies, basics)
+          maxLength: 100
+        gdrive_sops_folder_id:
+          type: string
+          nullable: true
+          description: Folder ID for '02 - SOPs' (standard operating procedures)
+          maxLength: 100
+        gdrive_reference_library_folder_id:
+          type: string
+          nullable: true
+          description: Folder ID for '03 - Reference Library' (reference documents,
+            forms, registers)
+          maxLength: 100
         xero_tenant_id:
           type: string
           nullable: true
@@ -13036,6 +13510,63 @@ components:
           minLength: 1
         metadata:
           description: Extra data like streaming status, processing time, etc.
+    PatchedProcessDocumentEntryRequest:
+      type: object
+      description: Serializer for ProcessDocumentEntry - individual entries in structured
+        documents.
+      properties:
+        entry_date:
+          type: string
+          format: date
+          description: Date this entry relates to
+        data:
+          description: Entry data - schema varies by document type
+    PatchedProcessDocumentUpdateRequest:
+      type: object
+      description: Serializer for updating ProcessDocument metadata.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          description: Job name for JSA, procedure name for SWP/SOP
+          maxLength: 255
+        document_number:
+          type: string
+          nullable: true
+          description: Document number for SWPs (e.g., '307' for section 3, doc 7)
+          maxLength: 50
+        tags:
+          description: Free-text tags, e.g. ["safety", "machinery", "sop"]
+        document_type:
+          allOf:
+            - $ref: '#/components/schemas/DocumentTypeEnum'
+          description: |-
+            Document type: procedure, form, register, or reference
+
+            * `procedure` - Procedure
+            * `form` - Form
+            * `register` - Register
+            * `reference` - Reference
+        is_template:
+          type: boolean
+          description: True if this is a template that can be filled in to create
+            records
+        form_schema:
+          description: JSON schema defining entry fields for form templates
+        site_location:
+          type: string
+          description: Work site location (optional for SWPs)
+          maxLength: 500
+        status:
+          allOf:
+            - $ref: '#/components/schemas/Status0cbEnum'
+          description: |-
+            Document lifecycle status
+
+            * `draft` - Draft
+            * `active` - Active
+            * `completed` - Completed
+            * `archived` - Archived
     PatchedPurchaseOrderUpdateRequest:
       type: object
       description: Serializer for updating purchase orders.
@@ -13804,6 +14335,379 @@ components:
       description: |-
         * `time_materials` - Time & Materials
         * `fixed_price` - Fixed Price
+    ProcessDocument:
+      type: object
+      description: |-
+        Main serializer for ProcessDocument model.
+
+        Returns document metadata and Google Docs URL for editing.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        document_type:
+          allOf:
+            - $ref: '#/components/schemas/DocumentTypeEnum'
+          readOnly: true
+          description: |-
+            Document type: procedure, form, register, or reference
+
+            * `procedure` - Procedure
+            * `form` - Form
+            * `register` - Register
+            * `reference` - Reference
+        document_number:
+          type: string
+          nullable: true
+          description: Document number for SWPs (e.g., '307' for section 3, doc 7)
+          maxLength: 50
+        job_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          description: Linked job ID (null for SWPs)
+        job_number:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Linked job number (null for SWPs)
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+          description: Job name for JSA, procedure name for SWP/SOP
+          maxLength: 255
+        company_name:
+          type: string
+          maxLength: 255
+        site_location:
+          type: string
+          description: Work site location (optional for SWPs)
+          maxLength: 500
+        google_doc_id:
+          type: string
+          readOnly: true
+          description: Google Docs document ID
+        google_doc_url:
+          type: string
+          format: uri
+          readOnly: true
+          description: URL to edit the document in Google Docs
+        tags:
+          description: Free-text tags, e.g. ["safety", "machinery", "sop"]
+        is_template:
+          type: boolean
+          description: True if this is a template that can be filled in to create
+            records
+        status:
+          allOf:
+            - $ref: '#/components/schemas/Status0cbEnum'
+          description: |-
+            Document lifecycle status
+
+            * `draft` - Draft
+            * `active` - Active
+            * `completed` - Completed
+            * `archived` - Archived
+        parent_template_id:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          description: ID of the template this record was created from
+        form_schema:
+          description: JSON schema defining entry fields for form templates
+      required:
+        - company_name
+        - created_at
+        - document_type
+        - google_doc_id
+        - google_doc_url
+        - id
+        - job_id
+        - job_number
+        - parent_template_id
+        - title
+        - updated_at
+    ProcessDocumentContentResponse:
+      type: object
+      description: Response when reading process document content from Google Docs.
+      properties:
+        title:
+          type: string
+        document_type:
+          type: string
+        description:
+          type: string
+        site_location:
+          type: string
+        ppe_requirements:
+          type: array
+          items:
+            type: string
+        tasks:
+          type: array
+          items: {}
+        additional_notes:
+          type: string
+        raw_text:
+          type: string
+      required:
+        - additional_notes
+        - description
+        - document_type
+        - ppe_requirements
+        - raw_text
+        - site_location
+        - tasks
+        - title
+    ProcessDocumentContentUpdateRequest:
+      type: object
+      description: Request body for updating process document content in Google Docs.
+      properties:
+        title:
+          type: string
+          minLength: 1
+        site_location:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          minLength: 1
+        ppe_requirements:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        tasks:
+          type: array
+          items: {}
+        additional_notes:
+          type: string
+          minLength: 1
+    ProcessDocumentCreateRequest:
+      type: object
+      description: Request serializer for creating a blank process document.
+      properties:
+        document_type:
+          allOf:
+            - $ref: '#/components/schemas/DocumentTypeEnum'
+          description: |-
+            Document type: procedure, form, register, or reference
+
+            * `procedure` - Procedure
+            * `form` - Form
+            * `register` - Register
+            * `reference` - Reference
+        title:
+          type: string
+          minLength: 1
+          description: Document title
+          maxLength: 255
+        document_number:
+          type: string
+          default: ''
+          description: Optional document number
+          maxLength: 50
+        tags:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: Optional list of tags
+        is_template:
+          type: boolean
+          default: false
+          description: Whether this is a template
+        site_location:
+          type: string
+          default: ''
+          description: Optional site location
+          maxLength: 255
+      required:
+        - document_type
+        - title
+    ProcessDocumentEntry:
+      type: object
+      description: Serializer for ProcessDocumentEntry - individual entries in structured
+        documents.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        document:
+          type: string
+          format: uuid
+          readOnly: true
+          description: Parent process document
+        entry_date:
+          type: string
+          format: date
+          description: Date this entry relates to
+        entered_by:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          description: Staff member who created this entry
+        entered_by_name:
+          type: string
+          readOnly: true
+          nullable: true
+        data:
+          description: Entry data - schema varies by document type
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+        - created_at
+        - document
+        - entered_by
+        - entered_by_name
+        - entry_date
+        - id
+    ProcessDocumentEntryRequest:
+      type: object
+      description: Serializer for ProcessDocumentEntry - individual entries in structured
+        documents.
+      properties:
+        entry_date:
+          type: string
+          format: date
+          description: Date this entry relates to
+        data:
+          description: Entry data - schema varies by document type
+      required:
+        - entry_date
+    ProcessDocumentList:
+      type: object
+      description: Lightweight serializer for listing process documents.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        document_type:
+          allOf:
+            - $ref: '#/components/schemas/DocumentTypeEnum'
+          description: |-
+            Document type: procedure, form, register, or reference
+
+            * `procedure` - Procedure
+            * `form` - Form
+            * `register` - Register
+            * `reference` - Reference
+        document_number:
+          type: string
+          nullable: true
+          description: Document number for SWPs (e.g., '307' for section 3, doc 7)
+          maxLength: 50
+        job_number:
+          type: string
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        title:
+          type: string
+          description: Job name for JSA, procedure name for SWP/SOP
+          maxLength: 255
+        site_location:
+          type: string
+          description: Work site location (optional for SWPs)
+          maxLength: 500
+        google_doc_url:
+          type: string
+          format: uri
+          description: URL to edit the document in Google Docs
+          maxLength: 200
+        tags:
+          description: Free-text tags, e.g. ["safety", "machinery", "sop"]
+        is_template:
+          type: boolean
+          description: True if this is a template that can be filled in to create
+            records
+        status:
+          allOf:
+            - $ref: '#/components/schemas/Status0cbEnum'
+          description: |-
+            Document lifecycle status
+
+            * `draft` - Draft
+            * `active` - Active
+            * `completed` - Completed
+            * `archived` - Archived
+        form_schema:
+          description: JSON schema defining entry fields for form templates
+      required:
+        - created_at
+        - document_type
+        - id
+        - job_number
+        - title
+        - updated_at
+    ProcessDocumentUpdateRequest:
+      type: object
+      description: Serializer for updating ProcessDocument metadata.
+      properties:
+        title:
+          type: string
+          minLength: 1
+          description: Job name for JSA, procedure name for SWP/SOP
+          maxLength: 255
+        document_number:
+          type: string
+          nullable: true
+          description: Document number for SWPs (e.g., '307' for section 3, doc 7)
+          maxLength: 50
+        tags:
+          description: Free-text tags, e.g. ["safety", "machinery", "sop"]
+        document_type:
+          allOf:
+            - $ref: '#/components/schemas/DocumentTypeEnum'
+          description: |-
+            Document type: procedure, form, register, or reference
+
+            * `procedure` - Procedure
+            * `form` - Form
+            * `register` - Register
+            * `reference` - Reference
+        is_template:
+          type: boolean
+          description: True if this is a template that can be filled in to create
+            records
+        form_schema:
+          description: JSON schema defining entry fields for form templates
+        site_location:
+          type: string
+          description: Work site location (optional for SWPs)
+          maxLength: 500
+        status:
+          allOf:
+            - $ref: '#/components/schemas/Status0cbEnum'
+          description: |-
+            Document lifecycle status
+
+            * `draft` - Draft
+            * `active` - Active
+            * `completed` - Completed
+            * `archived` - Archived
     ProductMapping:
       type: object
       description: Serializer for ProductParsingMapping model.
@@ -14813,192 +15717,6 @@ components:
       required:
         - description
         - title
-    SafetyDocument:
-      type: object
-      description: |-
-        Main serializer for SafetyDocument model.
-
-        Returns document metadata and Google Docs URL for editing.
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        document_type:
-          allOf:
-            - $ref: '#/components/schemas/DocumentTypeEnum'
-          readOnly: true
-          description: |-
-            Type of safety document (JSA or SWP)
-
-            * `jsa` - Job Safety Analysis
-            * `swp` - Safe Work Procedure
-            * `sop` - Standard Operating Procedure
-        document_number:
-          type: string
-          nullable: true
-          description: Document number for SWPs (e.g., '307' for section 3, doc 7)
-          maxLength: 50
-        job_id:
-          type: string
-          format: uuid
-          readOnly: true
-          nullable: true
-          description: Linked job ID (null for SWPs)
-        job_number:
-          type: string
-          readOnly: true
-          nullable: true
-          description: Linked job number (null for SWPs)
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-        title:
-          type: string
-          description: Job name for JSA, procedure name for SWP
-          maxLength: 255
-        company_name:
-          type: string
-          maxLength: 255
-        site_location:
-          type: string
-          description: Work site location (optional for SWPs)
-          maxLength: 500
-        google_doc_id:
-          type: string
-          readOnly: true
-          description: Google Docs document ID
-        google_doc_url:
-          type: string
-          format: uri
-          readOnly: true
-          description: URL to edit the document in Google Docs
-      required:
-        - company_name
-        - created_at
-        - document_type
-        - google_doc_id
-        - google_doc_url
-        - id
-        - job_id
-        - job_number
-        - title
-        - updated_at
-    SafetyDocumentContentResponse:
-      type: object
-      description: Response when reading safety document content from Google Docs.
-      properties:
-        title:
-          type: string
-        document_type:
-          type: string
-        description:
-          type: string
-        site_location:
-          type: string
-        ppe_requirements:
-          type: array
-          items:
-            type: string
-        tasks:
-          type: array
-          items: {}
-        additional_notes:
-          type: string
-        raw_text:
-          type: string
-      required:
-        - additional_notes
-        - description
-        - document_type
-        - ppe_requirements
-        - raw_text
-        - site_location
-        - tasks
-        - title
-    SafetyDocumentContentUpdateRequest:
-      type: object
-      description: Request body for updating safety document content in Google Docs.
-      properties:
-        title:
-          type: string
-          minLength: 1
-        site_location:
-          type: string
-          minLength: 1
-        description:
-          type: string
-          minLength: 1
-        ppe_requirements:
-          type: array
-          items:
-            type: string
-            minLength: 1
-        tasks:
-          type: array
-          items: {}
-        additional_notes:
-          type: string
-          minLength: 1
-    SafetyDocumentList:
-      type: object
-      description: Lightweight serializer for listing safety documents.
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        document_type:
-          allOf:
-            - $ref: '#/components/schemas/DocumentTypeEnum'
-          description: |-
-            Type of safety document (JSA or SWP)
-
-            * `jsa` - Job Safety Analysis
-            * `swp` - Safe Work Procedure
-            * `sop` - Standard Operating Procedure
-        document_number:
-          type: string
-          nullable: true
-          description: Document number for SWPs (e.g., '307' for section 3, doc 7)
-          maxLength: 50
-        job_number:
-          type: string
-          readOnly: true
-          nullable: true
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-        title:
-          type: string
-          description: Job name for JSA, procedure name for SWP
-          maxLength: 255
-        site_location:
-          type: string
-          description: Work site location (optional for SWPs)
-          maxLength: 500
-        google_doc_url:
-          type: string
-          format: uri
-          description: URL to edit the document in Google Docs
-          maxLength: 200
-      required:
-        - created_at
-        - document_type
-        - id
-        - job_number
-        - title
-        - updated_at
     SettingsField:
       type: object
       description: Serializer for individual field metadata.
@@ -15758,6 +16476,18 @@ components:
         details: {}
       required:
         - error
+    Status0cbEnum:
+      enum:
+        - draft
+        - active
+        - completed
+        - archived
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `active` - Active
+        * `completed` - Completed
+        * `archived` - Archived
     StockConsumeRequest:
       type: object
       description: Serializer for stock consumption request
