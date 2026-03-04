@@ -6,7 +6,11 @@ Vue 3 + TypeScript jobs management app with multi-user editing, autosave, and op
 
 ## Backend Communication
 
-MCP server `backend` connects to backend Claude Code. **Delegate tasks** via `mcp__backend__claude_code` tool.
+**NEVER read backend code** — not directly from the filesystem, not via the `mcp__backend__claude_code` tool, not via any other means. The backend is a separate codebase with its own Claude Code session. You do not have permission to see it.
+
+**NEVER send tasks or commands to the backend** via the MCP tool. Do not use `mcp__backend__claude_code` to make changes, run commands, or read code. You MAY use it to ask plain English questions (e.g. "How does the ProcessDocument viewset handle filtering?") — but never to execute actions or view source code.
+
+**How to work with the backend:** Write requirements as English-language spec documents (in `docs/plans/`) and present them to the user. The user relays them to the backend team. If you need to know how something works on the backend, ask the user in plain English — they will get the answer and relay it back.
 
 ---
 
