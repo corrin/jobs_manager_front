@@ -12,6 +12,11 @@ import type {
   ProcessDocumentUpdateRequest,
   ProcessDocumentEntryRequest,
   ProcessDocumentFilters,
+  SafetyDocumentContent,
+  SafetyDocumentType,
+  ControlMeasure,
+  SWPGenerateRequest,
+  SectionType,
 } from '@/types/processDocument.types'
 
 class ProcessDocumentsService {
@@ -146,6 +151,111 @@ class ProcessDocumentsService {
     return api.job_rest_process_documents_entries_update(payload, {
       params: { document_pk: documentId, id: entryId },
     })
+  }
+
+  // ============================================================
+  // JSA/SWP Operations
+  // ============================================================
+
+  async listJobJSAs(jobId: string): Promise<ProcessDocumentListItem[]> {
+    return api.job_rest_jobs_jsa_list({ params: { job_id: jobId } })
+  }
+
+  async listSWPs(): Promise<ProcessDocumentListItem[]> {
+    return api.job_rest_swp_list()
+  }
+
+  async generateJobJSA(jobId: string): Promise<ProcessDocument> {
+    return api.job_rest_jobs_jsa_generate_create(undefined, { params: { job_id: jobId } })
+  }
+
+  async generateSWP(request: SWPGenerateRequest): Promise<ProcessDocument> {
+    return api.job_rest_swp_generate_create(request)
+  }
+
+  // ============================================================
+  // Google Doc Content Read/Write
+  // ============================================================
+
+  async getDocumentContent(docId: string): Promise<SafetyDocumentContent> {
+    const response = await api.job_rest_process_documents_content_retrieve({
+      params: { id: docId },
+    })
+    return {
+      ...response,
+      document_type: response.document_type as SafetyDocumentType,
+      tasks: response.tasks as unknown as SafetyDocumentContent['tasks'],
+    }
+  }
+
+  async updateDocumentContent(
+    docId: string,
+    content: Partial<SafetyDocumentContent>,
+  ): Promise<ProcessDocument> {
+    return api.job_rest_process_documents_content_update(content, {
+      params: { id: docId },
+    })
+  }
+
+  // ============================================================
+  // AI Generation Endpoints
+  // ============================================================
+
+  async generateHazards(taskDescription: string): Promise<string[]> {
+    const response = await api.job_rest_safety_ai_generate_hazards_create({
+      task_description: taskDescription,
+    })
+    return response.hazards
+  }
+
+  async generateControls(hazards: string[], taskDescription?: string): Promise<ControlMeasure[]> {
+    const response = await api.job_rest_safety_ai_generate_controls_create({
+      hazards,
+      task_description: taskDescription,
+    })
+    return response.controls
+  }
+
+  async improveSection(
+    sectionText: string,
+    sectionType: SectionType,
+    context?: string,
+  ): Promise<string> {
+    const response = await api.job_rest_safety_ai_improve_section_create({
+      section_text: sectionText,
+      section_type: sectionType,
+      context,
+    })
+    return response.improved_text
+  }
+
+  async improveDocument(
+    rawText: string,
+    documentType: SafetyDocumentType,
+  ): Promise<SafetyDocumentContent> {
+    const response = await api.job_rest_safety_ai_improve_document_create({
+      raw_text: rawText,
+      document_type: documentType,
+    })
+    return response as unknown as SafetyDocumentContent
+  }
+
+  // ============================================================
+  // Utility Methods
+  // ============================================================
+
+  openInGoogleDocs(doc: ProcessDocument | ProcessDocumentListItem): void {
+    if (doc.google_doc_url) {
+      window.open(doc.google_doc_url, '_blank')
+    }
+  }
+
+  getDocumentTypeLabel(type: SafetyDocumentType): string {
+    return type === 'jsa' ? 'Job Safety Analysis' : 'Safe Work Procedure'
+  }
+
+  getDocumentTypeShortLabel(type: SafetyDocumentType): string {
+    return type === 'jsa' ? 'JSA' : 'SWP'
   }
 }
 

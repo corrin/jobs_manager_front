@@ -269,7 +269,7 @@
     v-if="wizardDocument"
     :is-open="isWizardOpen"
     :document-id="wizardDocument.id"
-    :document-type="wizardDocument.document_type"
+    :document-type="wizardDocument.document_type as SafetyDocumentType"
     @close="closeWizard"
     @saved="handleWizardSaved"
   />
@@ -306,21 +306,21 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
-import SafetyWizardModal from '@/components/safety/SafetyWizardModal.vue'
-import { useSafetyDocumentsStore } from '@/stores/safetyDocuments'
-import type { SafetyDocumentList } from '@/types/safety.types'
+import SafetyWizardModal from '@/components/process-documents/safety-wizard/SafetyWizardModal.vue'
+import { useJsaSwpStore } from '@/stores/jsaSwpDocuments'
+import type { ProcessDocumentListItem, SafetyDocumentType } from '@/types/processDocument.types'
 import { formatDate } from '@/utils/string-formatting'
 
 // Store
-const store = useSafetyDocumentsStore()
+const store = useJsaSwpStore()
 
 // Local state
 const searchQuery = ref('')
 const isCreateDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
-const documentToDelete = ref<SafetyDocumentList | null>(null)
+const documentToDelete = ref<ProcessDocumentListItem | null>(null)
 const isWizardOpen = ref(false)
-const wizardDocument = ref<SafetyDocumentList | null>(null)
+const wizardDocument = ref<ProcessDocumentListItem | null>(null)
 
 // Equipment type options
 type EquipmentType = 'machinery' | 'hand_tools' | 'other'
@@ -444,13 +444,13 @@ async function handleCreate() {
   }
 }
 
-function openInGoogleDocs(doc: SafetyDocumentList) {
+function openInGoogleDocs(doc: ProcessDocumentListItem) {
   if (doc.google_doc_url) {
     window.open(doc.google_doc_url, '_blank')
   }
 }
 
-function openWizard(doc: SafetyDocumentList) {
+function openWizard(doc: ProcessDocumentListItem) {
   wizardDocument.value = doc
   isWizardOpen.value = true
 }
@@ -466,7 +466,7 @@ function handleWizardSaved() {
   toast.success('Document saved successfully!')
 }
 
-function confirmDelete(doc: SafetyDocumentList) {
+function confirmDelete(doc: ProcessDocumentListItem) {
   documentToDelete.value = doc
   isDeleteDialogOpen.value = true
 }

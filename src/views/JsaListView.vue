@@ -148,12 +148,12 @@ import {
 import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useSafetyDocumentsStore } from '@/stores/safetyDocuments'
-import type { SafetyDocumentList } from '@/types/safety.types'
+import { useJsaSwpStore } from '@/stores/jsaSwpDocuments'
+import type { ProcessDocumentListItem } from '@/types/processDocument.types'
 import { formatDate } from '@/utils/string-formatting'
 
 const router = useRouter()
-const store = useSafetyDocumentsStore()
+const store = useJsaSwpStore()
 
 // Local state
 const searchQuery = ref('')
@@ -189,7 +189,7 @@ async function loadDocuments() {
   }
 }
 
-function openInGoogleDocs(doc: SafetyDocumentList) {
+function openInGoogleDocs(doc: ProcessDocumentListItem) {
   if (doc.google_doc_url) {
     window.open(doc.google_doc_url, '_blank')
   }

@@ -134,7 +134,7 @@
 
           <div class="relative" @click.stop v-if="userInfo.is_office_staff">
             <button
-              @click="toggleDropdown('safety')"
+              @click="toggleDropdown('process')"
               class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
             >
               <ShieldCheck class="w-4 h-4 mr-1" /> Process
@@ -149,7 +149,7 @@
               leave-to-class="opacity-0 -translate-y-2 scale-95"
             >
               <div
-                v-if="activeDropdown === 'safety'"
+                v-if="activeDropdown === 'process'"
                 class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
               >
                 <RouterLink
@@ -172,7 +172,7 @@
                 <div v-else class="px-4 py-2 text-sm text-gray-400 italic">No forms configured</div>
                 <div class="border-t border-gray-200 my-1"></div>
                 <RouterLink
-                  to="/safety/jsa"
+                  to="/process-documents/jsa"
                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
                 >
                   <ShieldCheck class="w-4 h-4 mr-2" /> Job Safety Analyses
@@ -551,7 +551,7 @@
 
               <div class="bg-gray-50 rounded-md" v-if="isOfficeStaff">
                 <button
-                  @click="toggleMobileSection('safety')"
+                  @click="toggleMobileSection('process')"
                   class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
                   <span class="flex items-center space-x-2">
@@ -561,7 +561,7 @@
                   <ChevronDown
                     :class="[
                       'h-4 w-4 transition-transform duration-200',
-                      mobileSections.safety ? 'rotate-180' : '',
+                      mobileSections.process ? 'rotate-180' : '',
                     ]"
                   />
                 </button>
@@ -573,7 +573,7 @@
                   leave-from-class="opacity-100 max-h-40"
                   leave-to-class="opacity-0 max-h-0"
                 >
-                  <div v-if="mobileSections.safety" class="overflow-hidden">
+                  <div v-if="mobileSections.process" class="overflow-hidden">
                     <div class="px-3 pb-2 space-y-1">
                       <RouterLink
                         to="/process-documents"
@@ -599,7 +599,7 @@
                       </div>
                       <div class="border-t border-gray-200 my-1"></div>
                       <RouterLink
-                        to="/safety/jsa"
+                        to="/process-documents/jsa"
                         class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
                       >
@@ -869,11 +869,11 @@ watch(
 
 const activeDropdown = ref<string | null>(null)
 const showMobileMenu = ref(false)
-type MobileSection = 'timesheets' | 'purchases' | 'safety' | 'reports' | 'admin'
+type MobileSection = 'timesheets' | 'purchases' | 'process' | 'reports' | 'admin'
 const mobileSections = ref<Record<MobileSection, boolean>>({
   timesheets: false,
   purchases: false,
-  safety: false,
+  process: false,
   reports: false,
   admin: false,
 })
@@ -899,7 +899,7 @@ const toggleMobileMenu = () => {
     mobileSections.value = {
       timesheets: false,
       purchases: false,
-      safety: false,
+      process: false,
       reports: false,
       admin: false,
     }
@@ -911,7 +911,7 @@ const closeMobileMenu = () => {
   mobileSections.value = {
     timesheets: false,
     purchases: false,
-    safety: false,
+    process: false,
     reports: false,
     admin: false,
   }

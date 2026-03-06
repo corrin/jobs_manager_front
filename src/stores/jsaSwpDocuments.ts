@@ -1,35 +1,35 @@
 /**
- * Safety Documents Store
+ * JSA/SWP Documents Store
  * Manages state for JSA/SWP safety documents
  */
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { safetyService } from '@/services/safety.service'
+import { processDocumentsService } from '@/services/processDocuments.service'
 import type {
-  SafetyDocument,
-  SafetyDocumentList,
+  ProcessDocument,
+  ProcessDocumentListItem,
   SafetyDocumentContent,
-  DocumentType,
+  SafetyDocumentType,
   SWPGenerateRequest,
-} from '@/types/safety.types'
+} from '@/types/processDocument.types'
 
-export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
+export const useJsaSwpStore = defineStore('jsaSwpDocuments', () => {
   // ============================================================
   // State
   // ============================================================
 
   // Documents by job ID (for JSAs)
-  const documentsByJobId = ref<Record<string, SafetyDocumentList[]>>({})
+  const documentsByJobId = ref<Record<string, ProcessDocumentListItem[]>>({})
 
   // All JSAs (for listing page)
-  const jsaDocuments = ref<SafetyDocumentList[]>([])
+  const jsaDocuments = ref<ProcessDocumentListItem[]>([])
 
   // All SWPs (standalone documents)
-  const swpDocuments = ref<SafetyDocumentList[]>([])
+  const swpDocuments = ref<ProcessDocumentListItem[]>([])
 
   // Currently loaded document (full metadata)
-  const currentDocument = ref<SafetyDocument | null>(null)
+  const currentDocument = ref<ProcessDocument | null>(null)
 
   // Currently loaded document content (from Google Doc)
   const currentContent = ref<SafetyDocumentContent | null>(null)
@@ -47,7 +47,7 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   // ============================================================
 
   const getDocumentsByJobId = computed(() => {
-    return (jobId: string): SafetyDocumentList[] => {
+    return (jobId: string): ProcessDocumentListItem[] => {
       return documentsByJobId.value[jobId] || []
     }
   })
@@ -70,7 +70,7 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     error.value = null
 
     try {
-      const docs = await safetyService.listJobJSAs(jobId)
+      const docs = await processDocumentsService.listJobJSAs(jobId)
       documentsByJobId.value = { ...documentsByJobId.value, [jobId]: docs }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load JSAs'
@@ -88,7 +88,10 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     error.value = null
 
     try {
-      jsaDocuments.value = await safetyService.listDocuments('jsa')
+      // JSA/SWP document types exist at runtime but aren't in the schema enum.
+      // Use the dedicated JSA list endpoint instead of filtering by type.
+      const allDocs = await processDocumentsService.listProcessDocuments()
+      jsaDocuments.value = allDocs.filter((d) => (d.document_type as string) === 'jsa')
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load JSAs'
       throw e
@@ -105,7 +108,7 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     error.value = null
 
     try {
-      swpDocuments.value = await safetyService.listSWPs()
+      swpDocuments.value = await processDocumentsService.listSWPs()
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load SWPs'
       throw e
@@ -117,12 +120,12 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   /**
    * Load a specific document's metadata
    */
-  async function loadDocument(docId: string): Promise<SafetyDocument> {
+  async function loadDocument(docId: string): Promise<ProcessDocument> {
     isLoading.value = true
     error.value = null
 
     try {
-      currentDocument.value = await safetyService.getDocument(docId)
+      currentDocument.value = await processDocumentsService.getProcessDocument(docId)
       return currentDocument.value
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load document'
@@ -140,7 +143,7 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     error.value = null
 
     try {
-      currentContent.value = await safetyService.getDocumentContent(docId)
+      currentContent.value = await processDocumentsService.getDocumentContent(docId)
       return currentContent.value
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load document content'
@@ -157,12 +160,12 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   /**
    * Generate a new JSA for a job
    */
-  async function generateJobJSA(jobId: string): Promise<SafetyDocument> {
+  async function generateJobJSA(jobId: string): Promise<ProcessDocument> {
     isGenerating.value = true
     error.value = null
 
     try {
-      const doc = await safetyService.generateJobJSA(jobId)
+      const doc = await processDocumentsService.generateJobJSA(jobId)
 
       // Add to the job's document list
       const existingDocs = documentsByJobId.value[jobId] || []
@@ -196,12 +199,12 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   /**
    * Generate a new SWP
    */
-  async function generateSWP(request: SWPGenerateRequest): Promise<SafetyDocument> {
+  async function generateSWP(request: SWPGenerateRequest): Promise<ProcessDocument> {
     isGenerating.value = true
     error.value = null
 
     try {
-      const doc = await safetyService.generateSWP(request)
+      const doc = await processDocumentsService.generateSWP(request)
 
       // Add to SWP list
       swpDocuments.value = [
@@ -238,12 +241,12 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   async function saveDocumentContent(
     docId: string,
     content: Partial<SafetyDocumentContent>,
-  ): Promise<SafetyDocument> {
+  ): Promise<ProcessDocument> {
     isSaving.value = true
     error.value = null
 
     try {
-      const doc = await safetyService.updateDocumentContent(docId, content)
+      const doc = await processDocumentsService.updateDocumentContent(docId, content)
       currentDocument.value = doc
 
       // Update timestamp in lists
@@ -263,14 +266,14 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
    */
   async function deleteDocument(
     docId: string,
-    documentType: DocumentType,
+    documentType: SafetyDocumentType,
     jobId?: string,
   ): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
-      await safetyService.deleteDocument(docId)
+      await processDocumentsService.deleteProcessDocument(docId)
 
       // Remove from appropriate list
       if (documentType === 'jsa' && jobId) {
@@ -300,7 +303,7 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   // Helper Functions
   // ============================================================
 
-  function updateDocumentInLists(doc: SafetyDocument): void {
+  function updateDocumentInLists(doc: ProcessDocument): void {
     // Update in job documents
     if (doc.job_id) {
       const jobDocs = documentsByJobId.value[doc.job_id]
@@ -322,7 +325,7 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     }
 
     // Update in SWP list
-    if (doc.document_type === 'swp') {
+    if ((doc.document_type as string) === 'swp') {
       swpDocuments.value = swpDocuments.value.map((d) =>
         d.id === doc.id
           ? {
