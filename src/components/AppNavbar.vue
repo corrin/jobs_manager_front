@@ -152,38 +152,41 @@
                 v-if="activeDropdown === 'process'"
                 class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
               >
-                <RouterLink
-                  to="/process-documents"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                <div
+                  class="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider"
                 >
-                  <FileText class="w-4 h-4 mr-2" /> Procedures
+                  Forms
+                </div>
+                <RouterLink
+                  v-for="cat in processDocsStore.categories.forms"
+                  :key="'form-' + cat"
+                  :to="`/process-documents/forms/${cat}`"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all capitalize"
+                >
+                  <ClipboardList class="w-4 h-4 mr-2" /> {{ cat }}
                 </RouterLink>
                 <div class="border-t border-gray-200 my-1"></div>
-                <template v-if="processDocsStore.formTemplates.length > 0">
-                  <RouterLink
-                    v-for="tmpl in processDocsStore.formTemplates"
-                    :key="tmpl.id"
-                    :to="`/process-documents/forms/${tmpl.id}`"
-                    class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
-                  >
-                    <ClipboardList class="w-4 h-4 mr-2" /> {{ tmpl.title }}
-                  </RouterLink>
-                </template>
-                <div v-else class="px-4 py-2 text-sm text-gray-400 italic">No forms configured</div>
-                <div class="border-t border-gray-200 my-1"></div>
-                <RouterLink
-                  to="/process-documents/jsa"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                <div
+                  class="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider"
                 >
-                  <ShieldCheck class="w-4 h-4 mr-2" /> Job Safety Analyses
+                  Procedures
+                </div>
+                <RouterLink
+                  v-for="cat in processDocsStore.categories.procedures"
+                  :key="'proc-' + cat"
+                  :to="`/process-documents/procedures/${cat}`"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all capitalize"
+                >
+                  <FileText class="w-4 h-4 mr-2" /> {{ cat }}
                 </RouterLink>
+                <div class="border-t border-gray-200 my-1"></div>
                 <a
                   href="/manual/"
                   target="_blank"
                   @click="activeDropdown = null"
                   class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-50 font-medium transition-all"
                 >
-                  <GraduationCap class="w-4 h-4 mr-2" /> Staff Training
+                  <GraduationCap class="w-4 h-4 mr-2" /> App Training
                 </a>
               </div>
             </Transition>
@@ -575,43 +578,43 @@
                 >
                   <div v-if="mobileSections.process" class="overflow-hidden">
                     <div class="px-3 pb-2 space-y-1">
-                      <RouterLink
-                        to="/process-documents"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
+                      <div
+                        class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider"
                       >
-                        <FileText class="w-4 h-4 mr-2" /> Procedures
-                      </RouterLink>
-                      <div class="border-t border-gray-200 my-1"></div>
-                      <template v-if="processDocsStore.formTemplates.length > 0">
-                        <RouterLink
-                          v-for="tmpl in processDocsStore.formTemplates"
-                          :key="tmpl.id"
-                          :to="`/process-documents/forms/${tmpl.id}`"
-                          class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
-                          @click="closeMobileMenu"
-                        >
-                          <ClipboardList class="w-4 h-4 mr-2" /> {{ tmpl.title }}
-                        </RouterLink>
-                      </template>
-                      <div v-else class="px-2 py-1.5 text-sm text-gray-400 italic">
-                        No forms configured
+                        Forms
                       </div>
-                      <div class="border-t border-gray-200 my-1"></div>
                       <RouterLink
-                        to="/process-documents/jsa"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        v-for="cat in processDocsStore.categories.forms"
+                        :key="'form-' + cat"
+                        :to="`/process-documents/forms/${cat}`"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all capitalize"
                         @click="closeMobileMenu"
                       >
-                        <ShieldCheck class="w-4 h-4 mr-2" /> Job Safety Analyses
+                        <ClipboardList class="w-4 h-4 mr-2" /> {{ cat }}
                       </RouterLink>
+                      <div class="border-t border-gray-200 my-1"></div>
+                      <div
+                        class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >
+                        Procedures
+                      </div>
+                      <RouterLink
+                        v-for="cat in processDocsStore.categories.procedures"
+                        :key="'proc-' + cat"
+                        :to="`/process-documents/procedures/${cat}`"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all capitalize"
+                        @click="closeMobileMenu"
+                      >
+                        <FileText class="w-4 h-4 mr-2" /> {{ cat }}
+                      </RouterLink>
+                      <div class="border-t border-gray-200 my-1"></div>
                       <a
                         href="/manual/"
                         target="_blank"
                         @click="closeMobileMenu()"
                         class="flex items-center w-full text-left px-2 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded transition-all"
                       >
-                        <GraduationCap class="w-4 h-4 mr-2" /> Staff Training
+                        <GraduationCap class="w-4 h-4 mr-2" /> App Training
                       </a>
                     </div>
                   </div>
@@ -934,7 +937,7 @@ onMounted(() => {
   }
   document.addEventListener('click', clickHandler)
 
-  processDocsStore.loadFormTemplates()
+  processDocsStore.loadCategories()
 })
 
 onUnmounted(() => {

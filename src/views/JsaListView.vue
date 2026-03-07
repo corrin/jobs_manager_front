@@ -149,7 +149,7 @@ import AppLayout from '@/components/AppLayout.vue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useJsaSwpStore } from '@/stores/jsaSwpDocuments'
-import type { ProcessDocumentListItem } from '@/types/processDocument.types'
+import type { ProcedureListItem } from '@/types/processDocument.types'
 import { formatDate } from '@/utils/string-formatting'
 
 const router = useRouter()
@@ -189,7 +189,7 @@ async function loadDocuments() {
   }
 }
 
-function openInGoogleDocs(doc: ProcessDocumentListItem) {
+function openInGoogleDocs(doc: ProcedureListItem) {
   if (doc.google_doc_url) {
     window.open(doc.google_doc_url, '_blank')
   }

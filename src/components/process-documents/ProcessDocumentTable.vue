@@ -1,18 +1,26 @@
 <template>
   <div>
     <!-- Loading spinner -->
-    <div v-if="isLoading" class="flex items-center justify-center py-12">
+    <div
+      v-if="isLoading"
+      class="flex items-center justify-center py-12"
+      data-automation-id="ProcessDocumentTable-loading"
+    >
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="sortedDocuments.length === 0" class="text-center py-12 text-muted-foreground">
+    <div
+      v-else-if="sortedDocuments.length === 0"
+      class="text-center py-12 text-muted-foreground"
+      data-automation-id="ProcessDocumentTable-empty"
+    >
       No process documents found.
     </div>
 
     <!-- Table -->
     <div v-else class="overflow-x-auto rounded-md border">
-      <table class="w-full text-sm">
+      <table class="w-full text-sm" data-automation-id="ProcessDocumentTable-table">
         <thead>
           <tr class="border-b bg-muted/50">
             <th
@@ -38,6 +46,7 @@
             v-for="doc in sortedDocuments"
             :key="doc.id"
             class="border-b hover:bg-muted/30 cursor-pointer transition-colors"
+            :data-automation-id="`ProcessDocumentTable-row-${doc.id}`"
             @click="onRowClick($event, doc)"
           >
             <td class="px-4 py-3 font-mono text-xs">
@@ -65,7 +74,10 @@
               </Badge>
             </td>
             <td class="px-4 py-3 text-center">
-              <FileCheck v-if="doc.is_template" class="size-4 text-primary inline-block" />
+              <FileCheck
+                v-if="'is_template' in doc && doc.is_template"
+                class="size-4 text-primary inline-block"
+              />
             </td>
             <td class="px-4 py-3 text-muted-foreground text-xs">
               {{ formatRelativeDate(doc.updated_at) }}
@@ -73,20 +85,32 @@
             <td class="px-4 py-3 text-right" @click.stop>
               <div class="flex items-center justify-end gap-1">
                 <Button
-                  v-if="doc.google_doc_url"
+                  v-if="showGoogleDocColumn && 'google_doc_url' in doc && doc.google_doc_url"
                   variant="ghost"
                   size="icon"
                   class="size-8"
                   title="Open Google Doc"
+                  :data-automation-id="`ProcessDocumentTable-google-doc-${doc.id}`"
                   @click="emit('open-google-doc', doc)"
                 >
                   <ExternalLink class="size-4" />
                 </Button>
                 <Button
-                  v-if="doc.is_template"
+                  variant="ghost"
+                  size="icon"
+                  class="size-8"
+                  title="Edit"
+                  :data-automation-id="`ProcessDocumentTable-edit-${doc.id}`"
+                  @click="emit('edit', doc)"
+                >
+                  <Pencil class="size-4" />
+                </Button>
+                <Button
+                  v-if="'is_template' in doc && doc.is_template"
                   variant="ghost"
                   size="sm"
                   title="Fill template"
+                  :data-automation-id="`ProcessDocumentTable-fill-${doc.id}`"
                   @click="emit('fill', doc)"
                 >
                   Fill
@@ -96,6 +120,7 @@
                   size="icon"
                   class="size-8 text-destructive hover:text-destructive"
                   title="Delete document"
+                  :data-automation-id="`ProcessDocumentTable-delete-${doc.id}`"
                   @click="emit('delete-doc', doc)"
                 >
                   <Trash2 class="size-4" />
@@ -111,24 +136,30 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { ProcessDocumentListItem } from '@/types/processDocument.types'
+import type { FormListItem, ProcedureListItem } from '@/types/processDocument.types'
 import Badge from '@/components/ui/badge/Badge.vue'
 import Button from '@/components/ui/button/Button.vue'
-import { ArrowUpDown, ExternalLink, FileCheck, Trash2 } from 'lucide-vue-next'
+import { ArrowUpDown, ExternalLink, FileCheck, Pencil, Trash2 } from 'lucide-vue-next'
+
+type DocumentItem = FormListItem | ProcedureListItem
 
 interface Props {
-  documents: ProcessDocumentListItem[]
+  documents: DocumentItem[]
   isLoading: boolean
+  showGoogleDocColumn?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  showGoogleDocColumn: false,
+})
 
 const emit = defineEmits<{
-  (e: 'row-click', doc: ProcessDocumentListItem): void
-  (e: 'fill', doc: ProcessDocumentListItem): void
-  (e: 'complete', doc: ProcessDocumentListItem): void
-  (e: 'delete-doc', doc: ProcessDocumentListItem): void
-  (e: 'open-google-doc', doc: ProcessDocumentListItem): void
+  (e: 'row-click', doc: DocumentItem): void
+  (e: 'fill', doc: DocumentItem): void
+  (e: 'complete', doc: DocumentItem): void
+  (e: 'edit', doc: DocumentItem): void
+  (e: 'delete-doc', doc: DocumentItem): void
+  (e: 'open-google-doc', doc: DocumentItem): void
 }>()
 
 const MAX_DISPLAY_TAGS = 3
@@ -157,17 +188,17 @@ function parseDocNumber(docNum: string | null | undefined): number {
 }
 
 // Tags helpers
-function parseTags(doc: ProcessDocumentListItem): string[] {
+function parseTags(doc: DocumentItem): string[] {
   const raw = doc.tags
   if (Array.isArray(raw)) return raw.filter((t): t is string => typeof t === 'string')
   return []
 }
 
-function displayTags(doc: ProcessDocumentListItem): string[] {
+function displayTags(doc: DocumentItem): string[] {
   return parseTags(doc).slice(0, MAX_DISPLAY_TAGS)
 }
 
-function overflowTagCount(doc: ProcessDocumentListItem): number {
+function overflowTagCount(doc: DocumentItem): number {
   const all = parseTags(doc)
   return Math.max(0, all.length - MAX_DISPLAY_TAGS)
 }
@@ -207,9 +238,8 @@ function formatRelativeDate(dateStr: string): string {
 }
 
 // Row click — avoid triggering when clicking action buttons
-function onRowClick(event: MouseEvent, doc: ProcessDocumentListItem) {
+function onRowClick(event: MouseEvent, doc: DocumentItem) {
   const target = event.target as HTMLElement
-  // Action column has @click.stop so this shouldn't fire, but guard just in case
   if (target.closest('[data-slot="button"]')) return
   emit('row-click', doc)
 }

@@ -270,6 +270,7 @@
     :is-open="isWizardOpen"
     :document-id="wizardDocument.id"
     :document-type="wizardDocument.document_type as SafetyDocumentType"
+    category="safety"
     @close="closeWizard"
     @saved="handleWizardSaved"
   />
@@ -308,7 +309,7 @@ import {
 } from '@/components/ui/dialog'
 import SafetyWizardModal from '@/components/process-documents/safety-wizard/SafetyWizardModal.vue'
 import { useJsaSwpStore } from '@/stores/jsaSwpDocuments'
-import type { ProcessDocumentListItem, SafetyDocumentType } from '@/types/processDocument.types'
+import type { ProcedureListItem, SafetyDocumentType } from '@/types/processDocument.types'
 import { formatDate } from '@/utils/string-formatting'
 
 // Store
@@ -318,9 +319,9 @@ const store = useJsaSwpStore()
 const searchQuery = ref('')
 const isCreateDialogOpen = ref(false)
 const isDeleteDialogOpen = ref(false)
-const documentToDelete = ref<ProcessDocumentListItem | null>(null)
+const documentToDelete = ref<ProcedureListItem | null>(null)
 const isWizardOpen = ref(false)
-const wizardDocument = ref<ProcessDocumentListItem | null>(null)
+const wizardDocument = ref<ProcedureListItem | null>(null)
 
 // Equipment type options
 type EquipmentType = 'machinery' | 'hand_tools' | 'other'
@@ -444,13 +445,13 @@ async function handleCreate() {
   }
 }
 
-function openInGoogleDocs(doc: ProcessDocumentListItem) {
+function openInGoogleDocs(doc: ProcedureListItem) {
   if (doc.google_doc_url) {
     window.open(doc.google_doc_url, '_blank')
   }
 }
 
-function openWizard(doc: ProcessDocumentListItem) {
+function openWizard(doc: ProcedureListItem) {
   wizardDocument.value = doc
   isWizardOpen.value = true
 }
@@ -466,7 +467,7 @@ function handleWizardSaved() {
   toast.success('Document saved successfully!')
 }
 
-function confirmDelete(doc: ProcessDocumentListItem) {
+function confirmDelete(doc: ProcedureListItem) {
   documentToDelete.value = doc
   isDeleteDialogOpen.value = true
 }
@@ -476,7 +477,7 @@ async function handleDelete() {
 
   const docId = documentToDelete.value.id
   try {
-    await store.deleteDocument(docId, 'swp')
+    await store.deleteDocument('safety', docId)
     toast.success('Procedure deleted')
   } catch {
     toast.error('Failed to delete procedure')

@@ -1,5 +1,9 @@
 <template>
-  <form @submit.prevent="handleSubmit" class="flex flex-col gap-4">
+  <form
+    @submit.prevent="handleSubmit"
+    class="flex flex-col gap-4"
+    data-automation-id="DynamicFormEntry-form"
+  >
     <!-- Entry date -->
     <div class="flex flex-col gap-1">
       <Label for="entry-date"> Entry Date <span class="text-destructive">*</span> </Label>
@@ -7,12 +11,18 @@
         id="entry-date"
         type="date"
         :model-value="entryDate"
+        data-automation-id="DynamicFormEntry-entry-date"
         @update:model-value="entryDate = String($event)"
       />
     </div>
 
     <!-- Dynamic fields -->
-    <div v-for="field in schema.fields" :key="field.key" class="flex flex-col gap-1">
+    <div
+      v-for="field in schema.fields"
+      :key="field.key"
+      class="flex flex-col gap-1"
+      :data-automation-id="`DynamicFormEntry-field-${field.key}`"
+    >
       <Label :for="'field-' + field.key">
         {{ field.label }}
         <span v-if="field.required" class="text-destructive">*</span>
@@ -90,7 +100,7 @@
 
     <!-- Submit -->
     <div class="flex justify-end">
-      <Button type="submit" :disabled="isSubmitting">
+      <Button type="submit" :disabled="isSubmitting" data-automation-id="DynamicFormEntry-submit">
         <template v-if="isSubmitting">
           <Loader2 class="size-4 animate-spin" />
           Saving...

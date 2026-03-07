@@ -1,6 +1,6 @@
 /**
  * Process Documents Store
- * Manages state for process documents (procedures, forms, registers, references)
+ * Manages state for forms and procedures, category-aware
  */
 
 import { defineStore } from 'pinia'
@@ -8,13 +8,18 @@ import { ref, computed } from 'vue'
 import { toast } from 'vue-sonner'
 import { processDocumentsService } from '@/services/processDocuments.service'
 import type {
-  ProcessDocumentListItem,
-  ProcessDocument,
-  ProcessDocumentEntry,
-  ProcessDocumentCreateRequest,
-  ProcessDocumentUpdateRequest,
-  ProcessDocumentEntryRequest,
+  FormListItem,
+  FormDetail,
+  FormEntry,
+  FormCreateRequest,
+  FormUpdateRequest,
+  FormEntryRequest,
+  ProcedureListItem,
+  ProcedureDetail,
+  ProcedureCreateRequest,
+  ProcedureUpdateRequest,
   ProcessDocumentFilters,
+  CategoriesResponse,
   FormSchema,
 } from '@/types/processDocument.types'
 
@@ -23,17 +28,22 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
   // State
   // ============================================================
 
-  // Library list
-  const documents = ref<ProcessDocumentListItem[]>([])
+  // Categories from backend
+  const categories = ref<CategoriesResponse>({ procedures: [], forms: [] })
 
-  // Detail view
-  const currentDocument = ref<ProcessDocument | null>(null)
+  // Active category from route
+  const activeCategory = ref<string>('safety')
 
-  // Form entries for the current document
-  const entries = ref<ProcessDocumentEntry[]>([])
+  // Lists by type
+  const forms = ref<FormListItem[]>([])
+  const procedures = ref<ProcedureListItem[]>([])
 
-  // Form templates for nav population
-  const formTemplates = ref<ProcessDocumentListItem[]>([])
+  // Detail views
+  const currentForm = ref<FormDetail | null>(null)
+  const currentProcedure = ref<ProcedureDetail | null>(null)
+
+  // Form entries for current form
+  const entries = ref<FormEntry[]>([])
 
   // Loading states
   const isLoading = ref(false)
@@ -46,10 +56,8 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
 
   // Filters with defaults
   const filters = ref<ProcessDocumentFilters>({
-    type: null,
     tags: [],
     status: 'active',
-    isTemplate: null,
     search: '',
   })
 
@@ -57,38 +65,37 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
   // Getters
   // ============================================================
 
-  /** Checks if currentDocument has a non-empty form_schema with fields */
   const hasFormSchema = computed<boolean>(() => {
-    if (!currentDocument.value?.form_schema) return false
-    const schema = currentDocument.value.form_schema as FormSchema
+    if (!currentForm.value?.form_schema) return false
+    const schema = currentForm.value.form_schema as FormSchema
     return Array.isArray(schema.fields) && schema.fields.length > 0
   })
 
-  /** Checks if currentDocument is a template */
-  const isTemplate = computed<boolean>(() => {
-    return currentDocument.value?.is_template === true
-  })
+  // ============================================================
+  // Actions - Categories
+  // ============================================================
 
-  /** Inverse of hasFormSchema — a prose-based document */
-  const isProse = computed<boolean>(() => {
-    return !hasFormSchema.value
-  })
+  async function loadCategories(): Promise<void> {
+    try {
+      categories.value = await processDocumentsService.getCategories()
+    } catch (e) {
+      console.error('Failed to load categories:', e)
+      toast.error('Failed to load categories')
+    }
+  }
 
   // ============================================================
   // Actions - Document Loading
   // ============================================================
 
-  /**
-   * Load documents list with current filters.
-   */
-  async function loadDocuments(): Promise<void> {
+  async function loadForms(category: string): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
-      documents.value = await processDocumentsService.listProcessDocuments(filters.value)
+      forms.value = await processDocumentsService.listForms(category, filters.value)
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to load process documents'
+      const message = e instanceof Error ? e.message : 'Failed to load forms'
       error.value = message
       toast.error(message)
     } finally {
@@ -96,17 +103,67 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
     }
   }
 
-  /**
-   * Load a single document by ID.
-   */
-  async function loadDocument(id: string): Promise<void> {
+  async function loadProcedures(category: string): Promise<void> {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      procedures.value = await processDocumentsService.listProcedures(category, filters.value)
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to load procedures'
+      error.value = message
+      toast.error(message)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function loadDocuments(category: string): Promise<void> {
+    isLoading.value = true
+    error.value = null
+    activeCategory.value = category
+
+    try {
+      const promises: Promise<void>[] = []
+
+      if (categories.value.forms.includes(category)) {
+        promises.push(
+          processDocumentsService.listForms(category, filters.value).then((result) => {
+            forms.value = result
+          }),
+        )
+      } else {
+        forms.value = []
+      }
+
+      if (categories.value.procedures.includes(category)) {
+        promises.push(
+          processDocumentsService.listProcedures(category, filters.value).then((result) => {
+            procedures.value = result
+          }),
+        )
+      } else {
+        procedures.value = []
+      }
+
+      await Promise.all(promises)
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to load documents'
+      error.value = message
+      toast.error(message)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function loadForm(category: string, id: string): Promise<void> {
     isLoadingDocument.value = true
     error.value = null
 
     try {
-      currentDocument.value = await processDocumentsService.getProcessDocument(id)
+      currentForm.value = await processDocumentsService.getForm(category, id)
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to load document'
+      const message = e instanceof Error ? e.message : 'Failed to load form'
       error.value = message
       toast.error(message)
     } finally {
@@ -114,44 +171,39 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
     }
   }
 
-  /**
-   * Load form templates for nav (type=form, is_template=true, status=active).
-   * Silent on error — nav just won't show items.
-   */
-  async function loadFormTemplates(): Promise<void> {
+  async function loadProcedure(category: string, id: string): Promise<void> {
+    isLoadingDocument.value = true
+    error.value = null
+
     try {
-      formTemplates.value = await processDocumentsService.listProcessDocuments({
-        type: 'form',
-        isTemplate: true,
-        status: 'active',
-        tags: [],
-        search: '',
-      })
+      currentProcedure.value = await processDocumentsService.getProcedure(category, id)
     } catch (e) {
-      console.error('Failed to load form templates for nav:', e)
+      const message = e instanceof Error ? e.message : 'Failed to load procedure'
+      error.value = message
+      toast.error(message)
+    } finally {
+      isLoadingDocument.value = false
     }
   }
 
   // ============================================================
-  // Actions - Document CRUD
+  // Actions - Form CRUD
   // ============================================================
 
-  /**
-   * Create a new process document.
-   */
-  async function createDocument(
-    payload: ProcessDocumentCreateRequest,
-  ): Promise<ProcessDocument | null> {
+  async function createForm(
+    category: string,
+    payload: FormCreateRequest,
+  ): Promise<FormDetail | null> {
     isSaving.value = true
     error.value = null
 
     try {
-      const doc = await processDocumentsService.createProcessDocument(payload)
-      toast.success('Document created')
-      await loadDocuments()
+      const doc = await processDocumentsService.createForm(category, payload)
+      toast.success('Form created')
+      await loadDocuments(category)
       return doc
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to create document'
+      const message = e instanceof Error ? e.message : 'Failed to create form'
       error.value = message
       toast.error(message)
       return null
@@ -160,19 +212,20 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
     }
   }
 
-  /**
-   * Update an existing process document.
-   */
-  async function updateDocument(id: string, payload: ProcessDocumentUpdateRequest): Promise<void> {
+  async function updateForm(
+    category: string,
+    id: string,
+    payload: FormUpdateRequest,
+  ): Promise<void> {
     isSaving.value = true
     error.value = null
 
     try {
-      const updated = await processDocumentsService.updateProcessDocument(id, payload)
-      currentDocument.value = updated
-      toast.success('Document updated')
+      const updated = await processDocumentsService.updateForm(category, id, payload)
+      currentForm.value = updated
+      toast.success('Form updated')
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to update document'
+      const message = e instanceof Error ? e.message : 'Failed to update form'
       error.value = message
       toast.error(message)
     } finally {
@@ -180,26 +233,20 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
     }
   }
 
-  /**
-   * Delete a process document.
-   */
-  async function deleteDocument(id: string): Promise<void> {
+  async function deleteForm(category: string, id: string): Promise<void> {
     isSaving.value = true
     error.value = null
 
     try {
-      await processDocumentsService.deleteProcessDocument(id)
-      documents.value = documents.value.filter((d) => d.id !== id)
-
-      // Clear current if it was the deleted one
-      if (currentDocument.value?.id === id) {
-        currentDocument.value = null
+      await processDocumentsService.deleteForm(category, id)
+      forms.value = forms.value.filter((d) => d.id !== id)
+      if (currentForm.value?.id === id) {
+        currentForm.value = null
         entries.value = []
       }
-
-      toast.success('Document deleted')
+      toast.success('Form deleted')
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to delete document'
+      const message = e instanceof Error ? e.message : 'Failed to delete form'
       error.value = message
       toast.error(message)
     } finally {
@@ -208,22 +255,23 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
   }
 
   // ============================================================
-  // Actions - Template Operations
+  // Actions - Procedure CRUD
   // ============================================================
 
-  /**
-   * Fill a template, creating a new record from it.
-   */
-  async function fillTemplate(id: string, jobId?: string): Promise<ProcessDocument | null> {
+  async function createProcedure(
+    category: string,
+    payload: ProcedureCreateRequest,
+  ): Promise<ProcedureDetail | null> {
     isSaving.value = true
     error.value = null
 
     try {
-      const doc = await processDocumentsService.fillTemplate(id, jobId)
-      toast.success('Template filled — new document created')
+      const doc = await processDocumentsService.createProcedure(category, payload)
+      toast.success('Procedure created')
+      await loadDocuments(category)
       return doc
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to fill template'
+      const message = e instanceof Error ? e.message : 'Failed to create procedure'
       error.value = message
       toast.error(message)
       return null
@@ -232,21 +280,64 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
     }
   }
 
-  /**
-   * Mark a document as completed (read-only).
-   */
-  async function completeDocument(id: string): Promise<void> {
+  async function updateProcedure(
+    category: string,
+    id: string,
+    payload: ProcedureUpdateRequest,
+  ): Promise<void> {
     isSaving.value = true
     error.value = null
 
     try {
-      const updated = await processDocumentsService.completeDocument(id)
-      currentDocument.value = updated
-      toast.success('Document marked as completed')
+      const updated = await processDocumentsService.updateProcedure(category, id, payload)
+      currentProcedure.value = updated
+      toast.success('Procedure updated')
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to complete document'
+      const message = e instanceof Error ? e.message : 'Failed to update procedure'
       error.value = message
       toast.error(message)
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  async function deleteProcedure(category: string, id: string): Promise<void> {
+    isSaving.value = true
+    error.value = null
+
+    try {
+      await processDocumentsService.deleteProcedure(category, id)
+      procedures.value = procedures.value.filter((d) => d.id !== id)
+      if (currentProcedure.value?.id === id) {
+        currentProcedure.value = null
+      }
+      toast.success('Procedure deleted')
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to delete procedure'
+      error.value = message
+      toast.error(message)
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  // ============================================================
+  // Actions - Fill Form (creates an entry from a form definition)
+  // ============================================================
+
+  async function fillForm(category: string, id: string, jobId?: string): Promise<FormEntry | null> {
+    isSaving.value = true
+    error.value = null
+
+    try {
+      const entry = await processDocumentsService.fillForm(category, id, jobId)
+      toast.success('Form filled — new entry created')
+      return entry
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to fill form'
+      error.value = message
+      toast.error(message)
+      return null
     } finally {
       isSaving.value = false
     }
@@ -256,15 +347,12 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
   // Actions - Entries
   // ============================================================
 
-  /**
-   * Load entries for a document.
-   */
-  async function loadEntries(documentId: string): Promise<void> {
+  async function loadEntries(category: string, documentId: string): Promise<void> {
     isLoadingEntries.value = true
     error.value = null
 
     try {
-      entries.value = await processDocumentsService.listEntries(documentId)
+      entries.value = await processDocumentsService.listEntries(category, documentId)
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Failed to load entries'
       error.value = message
@@ -274,15 +362,16 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
     }
   }
 
-  /**
-   * Add a new entry to a document. Prepends to the entries array.
-   */
-  async function addEntry(documentId: string, payload: ProcessDocumentEntryRequest): Promise<void> {
+  async function addEntry(
+    category: string,
+    documentId: string,
+    payload: FormEntryRequest,
+  ): Promise<void> {
     isSaving.value = true
     error.value = null
 
     try {
-      const entry = await processDocumentsService.createEntry(documentId, payload)
+      const entry = await processDocumentsService.createEntry(category, documentId, payload)
       entries.value = [entry, ...entries.value]
       toast.success('Entry added')
     } catch (e) {
@@ -294,19 +383,22 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
     }
   }
 
-  /**
-   * Update an existing entry. Replaces it in the entries array.
-   */
   async function updateEntry(
+    category: string,
     documentId: string,
     entryId: string,
-    payload: ProcessDocumentEntryRequest,
+    payload: FormEntryRequest,
   ): Promise<void> {
     isSaving.value = true
     error.value = null
 
     try {
-      const updated = await processDocumentsService.updateEntry(documentId, entryId, payload)
+      const updated = await processDocumentsService.updateEntry(
+        category,
+        documentId,
+        entryId,
+        payload,
+      )
       entries.value = entries.value.map((e) => (e.id === entryId ? updated : e))
       toast.success('Entry updated')
     } catch (e) {
@@ -322,19 +414,25 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
   // Actions - Filters & Cleanup
   // ============================================================
 
-  /**
-   * Merge new filters and reload documents.
-   */
-  async function setFilters(newFilters: Partial<ProcessDocumentFilters>): Promise<void> {
+  async function setFilters(
+    newFilters: Partial<ProcessDocumentFilters>,
+    type?: 'forms' | 'procedures',
+    category?: string,
+  ): Promise<void> {
     filters.value = { ...filters.value, ...newFilters }
-    await loadDocuments()
+    const cat = category ?? activeCategory.value
+    if (type === 'forms') {
+      await loadForms(cat)
+    } else if (type === 'procedures') {
+      await loadProcedures(cat)
+    } else {
+      await loadDocuments(cat)
+    }
   }
 
-  /**
-   * Reset current document and entries.
-   */
   function clearCurrentDocument(): void {
-    currentDocument.value = null
+    currentForm.value = null
+    currentProcedure.value = null
     entries.value = []
   }
 
@@ -344,10 +442,13 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
 
   return {
     // State
-    documents,
-    currentDocument,
+    categories,
+    activeCategory,
+    forms,
+    procedures,
+    currentForm,
+    currentProcedure,
     entries,
-    formTemplates,
     isLoading,
     isLoadingDocument,
     isLoadingEntries,
@@ -357,18 +458,21 @@ export const useProcessDocumentsStore = defineStore('processDocuments', () => {
 
     // Getters
     hasFormSchema,
-    isTemplate,
-    isProse,
 
     // Actions
+    loadCategories,
     loadDocuments,
-    loadDocument,
-    loadFormTemplates,
-    createDocument,
-    updateDocument,
-    deleteDocument,
-    fillTemplate,
-    completeDocument,
+    loadForms,
+    loadProcedures,
+    loadForm,
+    loadProcedure,
+    createForm,
+    updateForm,
+    deleteForm,
+    createProcedure,
+    updateProcedure,
+    deleteProcedure,
+    fillForm,
     loadEntries,
     addEntry,
     updateEntry,

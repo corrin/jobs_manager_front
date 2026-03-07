@@ -264,6 +264,7 @@ interface Props {
   isOpen: boolean
   documentId: string
   documentType: SafetyDocumentType
+  category: string
 }
 
 const props = defineProps<Props>()
@@ -330,7 +331,10 @@ async function loadDocument() {
   error.value = null
 
   try {
-    const docContent = await processDocumentsService.getDocumentContent(props.documentId)
+    const docContent = await processDocumentsService.getProcedureContent(
+      props.category,
+      props.documentId,
+    )
     content.value = docContent
     originalContent.value = JSON.parse(JSON.stringify(docContent))
     currentStep.value = 'description'
@@ -588,7 +592,7 @@ async function saveDocument() {
 
   isSaving.value = true
   try {
-    await store.saveDocumentContent(props.documentId, content.value)
+    await store.saveDocumentContent(props.category, props.documentId, content.value)
     emit('saved')
   } catch {
     toast.error('Failed to save document')

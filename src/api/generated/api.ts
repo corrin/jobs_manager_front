@@ -1575,42 +1575,6 @@ const JobHeaderResponse = z.object({
   rejected_flag: z.boolean().optional(),
 })
 const JobInvoicesResponse = z.object({ invoices: z.array(Invoice) })
-const DocumentTypeEnum = z.enum(['procedure', 'form', 'register', 'reference'])
-const Status0cbEnum = z.enum(['draft', 'active', 'completed', 'archived'])
-const ProcessDocumentList = z.object({
-  id: z.string().uuid(),
-  document_type: DocumentTypeEnum,
-  document_number: z.string().max(50).nullish(),
-  job_number: z.string().nullable(),
-  created_at: z.string().datetime({ offset: true }),
-  updated_at: z.string().datetime({ offset: true }),
-  title: z.string().max(255),
-  site_location: z.string().max(500).optional(),
-  google_doc_url: z.string().max(200).url().optional(),
-  tags: z.unknown().optional(),
-  is_template: z.boolean().optional(),
-  status: Status0cbEnum.optional(),
-  form_schema: z.unknown().optional(),
-})
-const ProcessDocument = z.object({
-  id: z.string().uuid(),
-  document_type: DocumentTypeEnum,
-  document_number: z.string().max(50).nullish(),
-  job_id: z.string().uuid().nullable(),
-  job_number: z.string().nullable(),
-  created_at: z.string().datetime({ offset: true }),
-  updated_at: z.string().datetime({ offset: true }),
-  title: z.string().max(255),
-  company_name: z.string().max(255),
-  site_location: z.string().max(500).optional(),
-  google_doc_id: z.string(),
-  google_doc_url: z.string().url(),
-  tags: z.unknown().optional(),
-  is_template: z.boolean().optional(),
-  status: Status0cbEnum.optional(),
-  parent_template_id: z.string().uuid().nullable(),
-  form_schema: z.unknown().optional(),
-})
 const JobQuoteAcceptanceRequest = z.object({
   success: z.boolean(),
   job_id: z.string().uuid(),
@@ -1857,75 +1821,6 @@ const MonthEndPostResponse = z.object({
   processed: z.array(z.string().uuid()),
   errors: z.array(z.string()),
 })
-const ProcessDocumentCreateRequest = z.object({
-  document_type: DocumentTypeEnum,
-  title: z.string().min(1).max(255),
-  document_number: z.string().max(50).optional().default(''),
-  tags: z.array(z.string().min(1)).optional(),
-  is_template: z.boolean().optional().default(false),
-  site_location: z.string().max(255).optional().default(''),
-})
-const ProcessDocumentEntry = z.object({
-  id: z.string().uuid(),
-  document: z.string().uuid(),
-  entry_date: z.string(),
-  entered_by: z.string().uuid().nullable(),
-  entered_by_name: z.string().nullable(),
-  data: z.unknown().optional(),
-  created_at: z.string().datetime({ offset: true }),
-})
-const ProcessDocumentEntryRequest = z.object({
-  entry_date: z.string(),
-  data: z.unknown().optional(),
-})
-const PatchedProcessDocumentEntryRequest = z
-  .object({ entry_date: z.string(), data: z.unknown() })
-  .partial()
-const ProcessDocumentUpdateRequest = z
-  .object({
-    title: z.string().min(1).max(255),
-    document_number: z.string().max(50).nullable(),
-    tags: z.unknown(),
-    document_type: DocumentTypeEnum,
-    is_template: z.boolean(),
-    form_schema: z.unknown(),
-    site_location: z.string().max(500),
-    status: Status0cbEnum,
-  })
-  .partial()
-const PatchedProcessDocumentUpdateRequest = z
-  .object({
-    title: z.string().min(1).max(255),
-    document_number: z.string().max(50).nullable(),
-    tags: z.unknown(),
-    document_type: DocumentTypeEnum,
-    is_template: z.boolean(),
-    form_schema: z.unknown(),
-    site_location: z.string().max(500),
-    status: Status0cbEnum,
-  })
-  .partial()
-const ProcessDocumentContentResponse = z.object({
-  title: z.string(),
-  document_type: z.string(),
-  description: z.string(),
-  site_location: z.string(),
-  ppe_requirements: z.array(z.string()),
-  tasks: z.array(z.unknown()),
-  additional_notes: z.string(),
-  raw_text: z.string(),
-})
-const ProcessDocumentContentUpdateRequest = z
-  .object({
-    title: z.string().min(1),
-    site_location: z.string().min(1),
-    description: z.string().min(1),
-    ppe_requirements: z.array(z.string().min(1)),
-    tasks: z.array(z.unknown()),
-    additional_notes: z.string().min(1),
-  })
-  .partial()
-const FillRequestRequest = z.object({ job_id: z.string().uuid().nullable() }).partial()
 const CostSetMetrics = z.object({
   revenue: z.string(),
   cost: z.string(),
@@ -1973,44 +1868,6 @@ const JobProfitabilityReportResponse = z.object({
   jobs: z.array(JobProfitabilityItem),
   summary: JobProfitabilitySummary,
   filters_applied: FiltersApplied,
-})
-const GenerateControlsRequestRequest = z.object({
-  hazards: z.array(z.string().min(1)),
-  task_description: z.string().min(1).optional().default(''),
-})
-const GenerateControlsResponse = z.object({ controls: z.array(z.string()) })
-const GenerateHazardsRequestRequest = z.object({
-  task_description: z.string().min(1),
-})
-const GenerateHazardsResponse = z.object({ hazards: z.array(z.string()) })
-const ImproveDocumentRequestRequest = z.object({
-  raw_text: z.string().min(1),
-  document_type: z.string().min(1).optional().default('swp'),
-})
-const ImproveDocumentResponse = z.object({
-  title: z.string(),
-  description: z.string(),
-  site_location: z.string(),
-  ppe_requirements: z.array(z.string()),
-  tasks: z.array(z.unknown()),
-  additional_notes: z.string(),
-})
-const ImproveSectionRequestRequest = z.object({
-  section_text: z.string().min(1),
-  section_type: z.string().min(1),
-  context: z.string().min(1).optional().default(''),
-})
-const ImproveSectionResponse = z.object({ improved_text: z.string() })
-const SOPGenerateRequestRequest = z.object({
-  title: z.string().min(1),
-  description: z.string().min(1).optional().default(''),
-  document_number: z.string().min(1).optional().default(''),
-})
-const SWPGenerateRequestRequest = z.object({
-  document_number: z.string().max(50).optional(),
-  title: z.string().min(1).max(255),
-  description: z.string().min(1),
-  site_location: z.string().optional(),
 })
 const TimesheetCostLine = z.object({
   id: z.string().uuid(),
@@ -2086,6 +1943,201 @@ const ModernTimesheetDayGetResponse = z.object({
   summary: ModernTimesheetSummary,
   date: z.string(),
 })
+const CategoriesResponse = z.object({
+  procedures: z.array(z.string()),
+  forms: z.array(z.string()),
+})
+const FormDocumentTypeEnum = z.enum(['form', 'register'])
+const FormStatusEnum = z.enum(['active', 'archived'])
+const FormList = z.object({
+  id: z.string().uuid(),
+  document_type: FormDocumentTypeEnum,
+  document_number: z.string().max(50).nullish(),
+  title: z.string().max(255),
+  tags: z.unknown().optional(),
+  status: FormStatusEnum.optional(),
+  form_schema: z.unknown().optional(),
+  entry_count: z.number().int().default(0),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+})
+const FormCreateRequest = z.object({
+  title: z.string().min(1).max(255),
+  document_number: z.string().max(50).optional().default(''),
+  tags: z.array(z.string().min(1)).optional(),
+  form_schema: z.unknown().optional(),
+})
+const FormDetail = z.object({
+  id: z.string().uuid(),
+  document_type: FormDocumentTypeEnum,
+  document_number: z.string().max(50).nullish(),
+  title: z.string().max(255),
+  tags: z.unknown().optional(),
+  status: FormStatusEnum.optional(),
+  form_schema: z.unknown().optional(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+})
+const FormEntry = z.object({
+  id: z.string().uuid(),
+  form: z.string().uuid(),
+  job: z.string().uuid().nullish(),
+  job_number: z.string().nullable(),
+  entry_date: z.string(),
+  entered_by: z.string().uuid().nullable(),
+  entered_by_name: z.string().nullable(),
+  data: z.unknown().optional(),
+  created_at: z.string().datetime({ offset: true }),
+})
+const FormEntryRequest = z.object({
+  job: z.string().uuid().nullish(),
+  entry_date: z.string(),
+  data: z.unknown().optional(),
+})
+const PatchedFormEntryRequest = z
+  .object({
+    job: z.string().uuid().nullable(),
+    entry_date: z.string(),
+    data: z.unknown(),
+  })
+  .partial()
+const FormUpdateRequest = z
+  .object({
+    title: z.string().min(1).max(255),
+    document_number: z.string().max(50).nullable(),
+    tags: z.unknown(),
+    form_schema: z.unknown(),
+    status: FormStatusEnum,
+  })
+  .partial()
+const PatchedFormUpdateRequest = z
+  .object({
+    title: z.string().min(1).max(255),
+    document_number: z.string().max(50).nullable(),
+    tags: z.unknown(),
+    form_schema: z.unknown(),
+    status: FormStatusEnum,
+  })
+  .partial()
+const FillRequestRequest = z
+  .object({
+    job_id: z.string().uuid().nullable(),
+    entry_date: z.string(),
+    data: z.unknown(),
+  })
+  .partial()
+const ProcedureDocumentTypeEnum = z.enum(['procedure', 'reference'])
+const ProcedureStatusEnum = z.enum(['draft', 'active', 'completed', 'archived'])
+const ProcedureList = z.object({
+  id: z.string().uuid(),
+  document_type: ProcedureDocumentTypeEnum,
+  document_number: z.string().max(50).nullish(),
+  title: z.string().max(255),
+  site_location: z.string().max(500).optional(),
+  google_doc_url: z.string().max(200).url().optional(),
+  job_number: z.string().nullable(),
+  tags: z.unknown().optional(),
+  status: ProcedureStatusEnum.optional(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+})
+const ProcedureDetail = z.object({
+  id: z.string().uuid(),
+  document_type: ProcedureDocumentTypeEnum,
+  document_number: z.string().max(50).nullish(),
+  title: z.string().max(255),
+  site_location: z.string().max(500).optional(),
+  google_doc_id: z.string(),
+  google_doc_url: z.string().url(),
+  job_id: z.string().uuid().nullable(),
+  job_number: z.string().nullable(),
+  tags: z.unknown().optional(),
+  status: ProcedureStatusEnum.optional(),
+  created_at: z.string().datetime({ offset: true }),
+  updated_at: z.string().datetime({ offset: true }),
+})
+const ProcedureCreateRequest = z.object({
+  title: z.string().min(1).max(255),
+  document_number: z.string().max(50).optional().default(''),
+  tags: z.array(z.string().min(1)).optional(),
+  site_location: z.string().max(255).optional().default(''),
+})
+const ProcedureUpdateRequest = z
+  .object({
+    title: z.string().min(1).max(255),
+    document_number: z.string().max(50).nullable(),
+    tags: z.unknown(),
+    site_location: z.string().max(500),
+    status: ProcedureStatusEnum,
+  })
+  .partial()
+const PatchedProcedureUpdateRequest = z
+  .object({
+    title: z.string().min(1).max(255),
+    document_number: z.string().max(50).nullable(),
+    tags: z.unknown(),
+    site_location: z.string().max(500),
+    status: ProcedureStatusEnum,
+  })
+  .partial()
+const ProcedureContentResponse = z.object({
+  title: z.string(),
+  document_type: z.string(),
+  description: z.string(),
+  site_location: z.string(),
+  ppe_requirements: z.array(z.string()),
+  tasks: z.array(z.unknown()),
+  additional_notes: z.string(),
+  raw_text: z.string(),
+})
+const ProcedureContentUpdateRequest = z
+  .object({
+    title: z.string().min(1),
+    site_location: z.string().min(1),
+    description: z.string().min(1),
+    ppe_requirements: z.array(z.string().min(1)),
+    tasks: z.array(z.unknown()),
+    additional_notes: z.string().min(1),
+  })
+  .partial()
+const SOPGenerateRequestRequest = z.object({
+  title: z.string().min(1),
+  description: z.string().min(1).optional().default(''),
+  document_number: z.string().min(1).optional().default(''),
+})
+const SWPGenerateRequestRequest = z.object({
+  document_number: z.string().max(50).optional(),
+  title: z.string().min(1).max(255),
+  description: z.string().min(1),
+  site_location: z.string().optional(),
+})
+const GenerateControlsRequestRequest = z.object({
+  hazards: z.array(z.string().min(1)),
+  task_description: z.string().min(1).optional().default(''),
+})
+const GenerateControlsResponse = z.object({ controls: z.array(z.string()) })
+const GenerateHazardsRequestRequest = z.object({
+  task_description: z.string().min(1),
+})
+const GenerateHazardsResponse = z.object({ hazards: z.array(z.string()) })
+const ImproveDocumentRequestRequest = z.object({
+  raw_text: z.string().min(1),
+  document_type: z.string().min(1).optional().default('swp'),
+})
+const ImproveDocumentResponse = z.object({
+  title: z.string(),
+  description: z.string(),
+  site_location: z.string(),
+  ppe_requirements: z.array(z.string()),
+  tasks: z.array(z.unknown()),
+  additional_notes: z.string(),
+})
+const ImproveSectionRequestRequest = z.object({
+  section_text: z.string().min(1),
+  section_type: z.string().min(1),
+  context: z.string().min(1).optional().default(''),
+})
+const ImproveSectionResponse = z.object({ improved_text: z.string() })
 const JobForPurchasing = z.object({
   id: z.string().uuid(),
   job_number: z.number().int().gte(-2147483648).lte(2147483647),
@@ -2904,10 +2956,6 @@ export const schemas = {
   JobStatusEnum,
   JobHeaderResponse,
   JobInvoicesResponse,
-  DocumentTypeEnum,
-  Status0cbEnum,
-  ProcessDocumentList,
-  ProcessDocument,
   JobQuoteAcceptanceRequest,
   JobQuoteAcceptance,
   QuoteImportStatusResponse,
@@ -2941,30 +2989,11 @@ export const schemas = {
   MonthEndGetResponse,
   MonthEndPostRequest,
   MonthEndPostResponse,
-  ProcessDocumentCreateRequest,
-  ProcessDocumentEntry,
-  ProcessDocumentEntryRequest,
-  PatchedProcessDocumentEntryRequest,
-  ProcessDocumentUpdateRequest,
-  PatchedProcessDocumentUpdateRequest,
-  ProcessDocumentContentResponse,
-  ProcessDocumentContentUpdateRequest,
-  FillRequestRequest,
   CostSetMetrics,
   JobProfitabilityItem,
   JobProfitabilitySummary,
   FiltersApplied,
   JobProfitabilityReportResponse,
-  GenerateControlsRequestRequest,
-  GenerateControlsResponse,
-  GenerateHazardsRequestRequest,
-  GenerateHazardsResponse,
-  ImproveDocumentRequestRequest,
-  ImproveDocumentResponse,
-  ImproveSectionRequestRequest,
-  ImproveSectionResponse,
-  SOPGenerateRequestRequest,
-  SWPGenerateRequestRequest,
   TimesheetCostLine,
   ModernTimesheetStaff,
   ModernTimesheetSummary,
@@ -2974,6 +3003,37 @@ export const schemas = {
   ModernTimesheetEntryPostResponse,
   ModernTimesheetJobGetResponse,
   ModernTimesheetDayGetResponse,
+  CategoriesResponse,
+  FormDocumentTypeEnum,
+  FormStatusEnum,
+  FormList,
+  FormCreateRequest,
+  FormDetail,
+  FormEntry,
+  FormEntryRequest,
+  PatchedFormEntryRequest,
+  FormUpdateRequest,
+  PatchedFormUpdateRequest,
+  FillRequestRequest,
+  ProcedureDocumentTypeEnum,
+  ProcedureStatusEnum,
+  ProcedureList,
+  ProcedureDetail,
+  ProcedureCreateRequest,
+  ProcedureUpdateRequest,
+  PatchedProcedureUpdateRequest,
+  ProcedureContentResponse,
+  ProcedureContentUpdateRequest,
+  SOPGenerateRequestRequest,
+  SWPGenerateRequestRequest,
+  GenerateControlsRequestRequest,
+  GenerateControlsResponse,
+  GenerateHazardsRequestRequest,
+  GenerateHazardsResponse,
+  ImproveDocumentRequestRequest,
+  ImproveDocumentResponse,
+  ImproveSectionRequestRequest,
+  ImproveSectionResponse,
   JobForPurchasing,
   AllJobsResponse,
   DeliveryReceiptAllocationRequest,
@@ -6201,36 +6261,6 @@ POST /job/rest/jobs/&lt;uuid:pk&gt;/quote/preview/`,
   },
   {
     method: 'get',
-    path: '/job/rest/jobs/:job_id/jsa/',
-    alias: 'job_rest_jobs_jsa_list',
-    description: `List all JSAs for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'job_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: z.array(ProcessDocumentList),
-  },
-  {
-    method: 'post',
-    path: '/job/rest/jobs/:job_id/jsa/generate/',
-    alias: 'job_rest_jobs_jsa_generate_create',
-    description: `Generate a new JSA for a job.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'job_id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ProcessDocument,
-  },
-  {
-    method: 'get',
     path: '/job/rest/jobs/:job_id/quote/',
     alias: 'job_rest_jobs_quote_retrieve',
     description: `Fetch job quote. Concurrency is controlled in this endpoint (E-tag/If-Match)`,
@@ -6459,408 +6489,6 @@ POST: Processes selected jobs for month-end archiving and status updates`,
   },
   {
     method: 'get',
-    path: '/job/rest/process-documents/',
-    alias: 'job_rest_process_documents_list',
-    description: `ViewSet for ProcessDocument CRUD operations.
-
-Endpoints:
-- GET    /rest/process-documents/              - list all documents
-- POST   /rest/process-documents/              - create document
-- GET    /rest/process-documents/&lt;id&gt;/         - retrieve document
-- PUT    /rest/process-documents/&lt;id&gt;/         - update document
-- PATCH  /rest/process-documents/&lt;id&gt;/         - partial update document
-- DELETE /rest/process-documents/&lt;id&gt;/         - delete document
-
-Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'is_template',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'parent_template_id',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'q',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'status',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'tags',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-      {
-        name: 'type',
-        type: 'Query',
-        schema: z.string().optional(),
-      },
-    ],
-    response: z.array(ProcessDocumentList),
-  },
-  {
-    method: 'post',
-    path: '/job/rest/process-documents/',
-    alias: 'job_rest_process_documents_create',
-    description: `ViewSet for ProcessDocument CRUD operations.
-
-Endpoints:
-- GET    /rest/process-documents/              - list all documents
-- POST   /rest/process-documents/              - create document
-- GET    /rest/process-documents/&lt;id&gt;/         - retrieve document
-- PUT    /rest/process-documents/&lt;id&gt;/         - update document
-- PATCH  /rest/process-documents/&lt;id&gt;/         - partial update document
-- DELETE /rest/process-documents/&lt;id&gt;/         - delete document
-
-Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: ProcessDocumentCreateRequest,
-      },
-    ],
-    response: ProcessDocument,
-  },
-  {
-    method: 'get',
-    path: '/job/rest/process-documents/:document_pk/entries/',
-    alias: 'job_rest_process_documents_entries_list',
-    description: `CRUD endpoints for ProcessDocumentEntry, nested under a document.
-
-Endpoints:
-- GET    /rest/process-documents/&lt;id&gt;/entries/              - list entries
-- POST   /rest/process-documents/&lt;id&gt;/entries/              - create entry
-- PUT    /rest/process-documents/&lt;id&gt;/entries/&lt;entry_id&gt;/   - update entry
-- DELETE /rest/process-documents/&lt;id&gt;/entries/&lt;entry_id&gt;/   - delete entry`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'document_pk',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: z.array(ProcessDocumentEntry),
-  },
-  {
-    method: 'post',
-    path: '/job/rest/process-documents/:document_pk/entries/',
-    alias: 'job_rest_process_documents_entries_create',
-    description: `CRUD endpoints for ProcessDocumentEntry, nested under a document.
-
-Endpoints:
-- GET    /rest/process-documents/&lt;id&gt;/entries/              - list entries
-- POST   /rest/process-documents/&lt;id&gt;/entries/              - create entry
-- PUT    /rest/process-documents/&lt;id&gt;/entries/&lt;entry_id&gt;/   - update entry
-- DELETE /rest/process-documents/&lt;id&gt;/entries/&lt;entry_id&gt;/   - delete entry`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z.object({
-          entry_date: z.string(),
-          data: z.unknown().optional(),
-        }),
-      },
-      {
-        name: 'document_pk',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ProcessDocumentEntry,
-  },
-  {
-    method: 'put',
-    path: '/job/rest/process-documents/:document_pk/entries/:id/',
-    alias: 'job_rest_process_documents_entries_update',
-    description: `CRUD endpoints for ProcessDocumentEntry, nested under a document.
-
-Endpoints:
-- GET    /rest/process-documents/&lt;id&gt;/entries/              - list entries
-- POST   /rest/process-documents/&lt;id&gt;/entries/              - create entry
-- PUT    /rest/process-documents/&lt;id&gt;/entries/&lt;entry_id&gt;/   - update entry
-- DELETE /rest/process-documents/&lt;id&gt;/entries/&lt;entry_id&gt;/   - delete entry`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z.object({
-          entry_date: z.string(),
-          data: z.unknown().optional(),
-        }),
-      },
-      {
-        name: 'document_pk',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ProcessDocumentEntry,
-  },
-  {
-    method: 'patch',
-    path: '/job/rest/process-documents/:document_pk/entries/:id/',
-    alias: 'job_rest_process_documents_entries_partial_update',
-    description: `CRUD endpoints for ProcessDocumentEntry, nested under a document.
-
-Endpoints:
-- GET    /rest/process-documents/&lt;id&gt;/entries/              - list entries
-- POST   /rest/process-documents/&lt;id&gt;/entries/              - create entry
-- PUT    /rest/process-documents/&lt;id&gt;/entries/&lt;entry_id&gt;/   - update entry
-- DELETE /rest/process-documents/&lt;id&gt;/entries/&lt;entry_id&gt;/   - delete entry`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z.object({ entry_date: z.string(), data: z.unknown() }).partial(),
-      },
-      {
-        name: 'document_pk',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ProcessDocumentEntry,
-  },
-  {
-    method: 'delete',
-    path: '/job/rest/process-documents/:document_pk/entries/:id/',
-    alias: 'job_rest_process_documents_entries_destroy',
-    description: `CRUD endpoints for ProcessDocumentEntry, nested under a document.
-
-Endpoints:
-- GET    /rest/process-documents/&lt;id&gt;/entries/              - list entries
-- POST   /rest/process-documents/&lt;id&gt;/entries/              - create entry
-- PUT    /rest/process-documents/&lt;id&gt;/entries/&lt;entry_id&gt;/   - update entry
-- DELETE /rest/process-documents/&lt;id&gt;/entries/&lt;entry_id&gt;/   - delete entry`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'document_pk',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: z.void(),
-  },
-  {
-    method: 'get',
-    path: '/job/rest/process-documents/:id/',
-    alias: 'job_rest_process_documents_retrieve',
-    description: `ViewSet for ProcessDocument CRUD operations.
-
-Endpoints:
-- GET    /rest/process-documents/              - list all documents
-- POST   /rest/process-documents/              - create document
-- GET    /rest/process-documents/&lt;id&gt;/         - retrieve document
-- PUT    /rest/process-documents/&lt;id&gt;/         - update document
-- PATCH  /rest/process-documents/&lt;id&gt;/         - partial update document
-- DELETE /rest/process-documents/&lt;id&gt;/         - delete document
-
-Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ProcessDocument,
-  },
-  {
-    method: 'put',
-    path: '/job/rest/process-documents/:id/',
-    alias: 'job_rest_process_documents_update',
-    description: `ViewSet for ProcessDocument CRUD operations.
-
-Endpoints:
-- GET    /rest/process-documents/              - list all documents
-- POST   /rest/process-documents/              - create document
-- GET    /rest/process-documents/&lt;id&gt;/         - retrieve document
-- PUT    /rest/process-documents/&lt;id&gt;/         - update document
-- PATCH  /rest/process-documents/&lt;id&gt;/         - partial update document
-- DELETE /rest/process-documents/&lt;id&gt;/         - delete document
-
-Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: ProcessDocumentUpdateRequest,
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ProcessDocument,
-  },
-  {
-    method: 'patch',
-    path: '/job/rest/process-documents/:id/',
-    alias: 'job_rest_process_documents_partial_update',
-    description: `ViewSet for ProcessDocument CRUD operations.
-
-Endpoints:
-- GET    /rest/process-documents/              - list all documents
-- POST   /rest/process-documents/              - create document
-- GET    /rest/process-documents/&lt;id&gt;/         - retrieve document
-- PUT    /rest/process-documents/&lt;id&gt;/         - update document
-- PATCH  /rest/process-documents/&lt;id&gt;/         - partial update document
-- DELETE /rest/process-documents/&lt;id&gt;/         - delete document
-
-Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: PatchedProcessDocumentUpdateRequest,
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ProcessDocument,
-  },
-  {
-    method: 'delete',
-    path: '/job/rest/process-documents/:id/',
-    alias: 'job_rest_process_documents_destroy',
-    description: `ViewSet for ProcessDocument CRUD operations.
-
-Endpoints:
-- GET    /rest/process-documents/              - list all documents
-- POST   /rest/process-documents/              - create document
-- GET    /rest/process-documents/&lt;id&gt;/         - retrieve document
-- PUT    /rest/process-documents/&lt;id&gt;/         - update document
-- PATCH  /rest/process-documents/&lt;id&gt;/         - partial update document
-- DELETE /rest/process-documents/&lt;id&gt;/         - delete document
-
-Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: z.void(),
-  },
-  {
-    method: 'post',
-    path: '/job/rest/process-documents/:id/complete/',
-    alias: 'job_rest_process_documents_complete_create',
-    description: `Mark a document as completed (read-only).`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ProcessDocument,
-  },
-  {
-    method: 'get',
-    path: '/job/rest/process-documents/:id/content/',
-    alias: 'job_rest_process_documents_content_retrieve',
-    description: `GET/PUT content for a process document stored in Google Docs.
-
-- GET: Fetch current content from Google Docs
-- PUT: Push updated content to Google Docs`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ProcessDocumentContentResponse,
-  },
-  {
-    method: 'put',
-    path: '/job/rest/process-documents/:id/content/',
-    alias: 'job_rest_process_documents_content_update',
-    description: `GET/PUT content for a process document stored in Google Docs.
-
-- GET: Fetch current content from Google Docs
-- PUT: Push updated content to Google Docs`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: ProcessDocumentContentUpdateRequest,
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ProcessDocument,
-  },
-  {
-    method: 'post',
-    path: '/job/rest/process-documents/:id/fill/',
-    alias: 'job_rest_process_documents_fill_create',
-    description: `Create a new record from a template.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z.object({ job_id: z.string().uuid().nullable() }).partial(),
-      },
-      {
-        name: 'id',
-        type: 'Path',
-        schema: z.string().uuid(),
-      },
-    ],
-    response: ProcessDocument,
-  },
-  {
-    method: 'get',
     path: '/job/rest/reports/job-profitability/',
     alias: 'job_profitability_report',
     description: `Returns profitability data for completed/archived jobs in a date range.`,
@@ -6903,112 +6531,6 @@ Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.`,
         schema: z.object({}).partial().passthrough(),
       },
     ],
-  },
-  {
-    method: 'post',
-    path: '/job/rest/safety-ai/generate-controls/',
-    alias: 'job_rest_safety_ai_generate_controls_create',
-    description: `Generate controls for hazards using AI.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: GenerateControlsRequestRequest,
-      },
-    ],
-    response: GenerateControlsResponse,
-  },
-  {
-    method: 'post',
-    path: '/job/rest/safety-ai/generate-hazards/',
-    alias: 'job_rest_safety_ai_generate_hazards_create',
-    description: `Generate hazards for a task description using AI.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: z.object({ task_description: z.string().min(1) }),
-      },
-    ],
-    response: GenerateHazardsResponse,
-  },
-  {
-    method: 'post',
-    path: '/job/rest/safety-ai/improve-document/',
-    alias: 'job_rest_safety_ai_improve_document_create',
-    description: `Improve an entire document using AI.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: ImproveDocumentRequestRequest,
-      },
-    ],
-    response: ImproveDocumentResponse,
-  },
-  {
-    method: 'post',
-    path: '/job/rest/safety-ai/improve-section/',
-    alias: 'job_rest_safety_ai_improve_section_create',
-    description: `Improve a section of text using AI.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: ImproveSectionRequestRequest,
-      },
-    ],
-    response: z.object({ improved_text: z.string() }),
-  },
-  {
-    method: 'get',
-    path: '/job/rest/sop/',
-    alias: 'job_rest_sop_list',
-    description: `List all Standard Operating Procedures.`,
-    requestFormat: 'json',
-    response: z.array(ProcessDocumentList),
-  },
-  {
-    method: 'post',
-    path: '/job/rest/sop/generate/',
-    alias: 'job_rest_sop_generate_create',
-    description: `Generate a new Standard Operating Procedure.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: SOPGenerateRequestRequest,
-      },
-    ],
-    response: ProcessDocument,
-  },
-  {
-    method: 'get',
-    path: '/job/rest/swp/',
-    alias: 'job_rest_swp_list',
-    description: `List all Safe Work Procedures.`,
-    requestFormat: 'json',
-    response: z.array(ProcessDocumentList),
-  },
-  {
-    method: 'post',
-    path: '/job/rest/swp/generate/',
-    alias: 'job_rest_swp_generate_create',
-    description: `Generate a new Safe Work Procedure.`,
-    requestFormat: 'json',
-    parameters: [
-      {
-        name: 'body',
-        type: 'Body',
-        schema: SWPGenerateRequestRequest,
-      },
-    ],
-    response: ProcessDocument,
   },
   {
     method: 'get',
@@ -7107,6 +6629,674 @@ Note: Content endpoints (GET/PUT) are handled by ProcessDocumentContentView.`,
       },
     ],
     response: ModernTimesheetDayGetResponse,
+  },
+  {
+    method: 'get',
+    path: '/process/rest/categories/',
+    alias: 'process_rest_categories_retrieve',
+    description: `Return available categories for procedures and forms.`,
+    requestFormat: 'json',
+    response: CategoriesResponse,
+  },
+  {
+    method: 'get',
+    path: '/process/rest/forms/:category/',
+    alias: 'process_rest_forms_list',
+    description: `CRUD for form/register definitions (fillable templates with entries, no Google Docs).
+
+Category is taken from the URL kwarg, e.g. /rest/forms/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'q',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'status',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'tags',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
+    response: z.array(FormList),
+  },
+  {
+    method: 'post',
+    path: '/process/rest/forms/:category/',
+    alias: 'process_rest_forms_create',
+    description: `CRUD for form/register definitions (fillable templates with entries, no Google Docs).
+
+Category is taken from the URL kwarg, e.g. /rest/forms/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: FormCreateRequest,
+      },
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: FormDetail,
+  },
+  {
+    method: 'get',
+    path: '/process/rest/forms/:category/:document_pk/entries/',
+    alias: 'process_rest_forms_entries_list',
+    description: `CRUD endpoints for FormEntry, nested under a form document.
+
+Endpoints:
+- GET    /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/              - list entries
+- POST   /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/              - create entry
+- PUT    /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/&lt;entry_id&gt;/   - update entry
+- DELETE /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/&lt;entry_id&gt;/   - delete entry`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'document_pk',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.array(FormEntry),
+  },
+  {
+    method: 'post',
+    path: '/process/rest/forms/:category/:document_pk/entries/',
+    alias: 'process_rest_forms_entries_create',
+    description: `CRUD endpoints for FormEntry, nested under a form document.
+
+Endpoints:
+- GET    /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/              - list entries
+- POST   /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/              - create entry
+- PUT    /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/&lt;entry_id&gt;/   - update entry
+- DELETE /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/&lt;entry_id&gt;/   - delete entry`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: FormEntryRequest,
+      },
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'document_pk',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: FormEntry,
+  },
+  {
+    method: 'put',
+    path: '/process/rest/forms/:category/:document_pk/entries/:id/',
+    alias: 'process_rest_forms_entries_update',
+    description: `CRUD endpoints for FormEntry, nested under a form document.
+
+Endpoints:
+- GET    /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/              - list entries
+- POST   /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/              - create entry
+- PUT    /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/&lt;entry_id&gt;/   - update entry
+- DELETE /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/&lt;entry_id&gt;/   - delete entry`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: FormEntryRequest,
+      },
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'document_pk',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: FormEntry,
+  },
+  {
+    method: 'patch',
+    path: '/process/rest/forms/:category/:document_pk/entries/:id/',
+    alias: 'process_rest_forms_entries_partial_update',
+    description: `CRUD endpoints for FormEntry, nested under a form document.
+
+Endpoints:
+- GET    /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/              - list entries
+- POST   /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/              - create entry
+- PUT    /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/&lt;entry_id&gt;/   - update entry
+- DELETE /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/&lt;entry_id&gt;/   - delete entry`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedFormEntryRequest,
+      },
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'document_pk',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: FormEntry,
+  },
+  {
+    method: 'delete',
+    path: '/process/rest/forms/:category/:document_pk/entries/:id/',
+    alias: 'process_rest_forms_entries_destroy',
+    description: `CRUD endpoints for FormEntry, nested under a form document.
+
+Endpoints:
+- GET    /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/              - list entries
+- POST   /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/              - create entry
+- PUT    /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/&lt;entry_id&gt;/   - update entry
+- DELETE /rest/forms/&lt;category&gt;/&lt;id&gt;/entries/&lt;entry_id&gt;/   - delete entry`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'document_pk',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
+  },
+  {
+    method: 'get',
+    path: '/process/rest/forms/:category/:id/',
+    alias: 'process_rest_forms_retrieve',
+    description: `CRUD for form/register definitions (fillable templates with entries, no Google Docs).
+
+Category is taken from the URL kwarg, e.g. /rest/forms/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: FormDetail,
+  },
+  {
+    method: 'put',
+    path: '/process/rest/forms/:category/:id/',
+    alias: 'process_rest_forms_update',
+    description: `CRUD for form/register definitions (fillable templates with entries, no Google Docs).
+
+Category is taken from the URL kwarg, e.g. /rest/forms/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: FormUpdateRequest,
+      },
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: FormDetail,
+  },
+  {
+    method: 'patch',
+    path: '/process/rest/forms/:category/:id/',
+    alias: 'process_rest_forms_partial_update',
+    description: `CRUD for form/register definitions (fillable templates with entries, no Google Docs).
+
+Category is taken from the URL kwarg, e.g. /rest/forms/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedFormUpdateRequest,
+      },
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: FormDetail,
+  },
+  {
+    method: 'delete',
+    path: '/process/rest/forms/:category/:id/',
+    alias: 'process_rest_forms_destroy',
+    description: `CRUD for form/register definitions (fillable templates with entries, no Google Docs).
+
+Category is taken from the URL kwarg, e.g. /rest/forms/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
+  },
+  {
+    method: 'post',
+    path: '/process/rest/forms/:category/:id/fill/',
+    alias: 'process_rest_forms_fill_create',
+    description: `Create a new FormEntry from a Form definition.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: FillRequestRequest,
+      },
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: FormEntry,
+  },
+  {
+    method: 'get',
+    path: '/process/rest/jobs/:job_id/jsa/',
+    alias: 'process_rest_jobs_jsa_list',
+    description: `List all JSAs for a job.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.array(ProcedureList),
+  },
+  {
+    method: 'post',
+    path: '/process/rest/jobs/:job_id/jsa/generate/',
+    alias: 'process_rest_jobs_jsa_generate_create',
+    description: `Generate a new JSA for a job.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'job_id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ProcedureDetail,
+  },
+  {
+    method: 'get',
+    path: '/process/rest/procedures/:category/',
+    alias: 'process_rest_procedures_list',
+    description: `CRUD for procedure documents (Google Doc-backed written documents).
+
+Category is taken from the URL kwarg, e.g. /rest/procedures/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'q',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'status',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'tags',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+    ],
+    response: z.array(ProcedureList),
+  },
+  {
+    method: 'post',
+    path: '/process/rest/procedures/:category/',
+    alias: 'process_rest_procedures_create',
+    description: `CRUD for procedure documents (Google Doc-backed written documents).
+
+Category is taken from the URL kwarg, e.g. /rest/procedures/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ProcedureCreateRequest,
+      },
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+    ],
+    response: ProcedureDetail,
+  },
+  {
+    method: 'get',
+    path: '/process/rest/procedures/:category/:id/',
+    alias: 'process_rest_procedures_retrieve',
+    description: `CRUD for procedure documents (Google Doc-backed written documents).
+
+Category is taken from the URL kwarg, e.g. /rest/procedures/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ProcedureDetail,
+  },
+  {
+    method: 'put',
+    path: '/process/rest/procedures/:category/:id/',
+    alias: 'process_rest_procedures_update',
+    description: `CRUD for procedure documents (Google Doc-backed written documents).
+
+Category is taken from the URL kwarg, e.g. /rest/procedures/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ProcedureUpdateRequest,
+      },
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ProcedureDetail,
+  },
+  {
+    method: 'patch',
+    path: '/process/rest/procedures/:category/:id/',
+    alias: 'process_rest_procedures_partial_update',
+    description: `CRUD for procedure documents (Google Doc-backed written documents).
+
+Category is taken from the URL kwarg, e.g. /rest/procedures/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: PatchedProcedureUpdateRequest,
+      },
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ProcedureDetail,
+  },
+  {
+    method: 'delete',
+    path: '/process/rest/procedures/:category/:id/',
+    alias: 'process_rest_procedures_destroy',
+    description: `CRUD for procedure documents (Google Doc-backed written documents).
+
+Category is taken from the URL kwarg, e.g. /rest/procedures/safety/.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: z.void(),
+  },
+  {
+    method: 'get',
+    path: '/process/rest/procedures/:category/:id/content/',
+    alias: 'process_rest_procedures_content_retrieve',
+    description: `GET/PUT content for a procedure stored in Google Docs.
+
+- GET: Fetch current content from Google Docs
+- PUT: Push updated content to Google Docs`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ProcedureContentResponse,
+  },
+  {
+    method: 'put',
+    path: '/process/rest/procedures/:category/:id/content/',
+    alias: 'process_rest_procedures_content_update',
+    description: `GET/PUT content for a procedure stored in Google Docs.
+
+- GET: Fetch current content from Google Docs
+- PUT: Push updated content to Google Docs`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ProcedureContentUpdateRequest,
+      },
+      {
+        name: 'category',
+        type: 'Path',
+        schema: z.string(),
+      },
+      {
+        name: 'id',
+        type: 'Path',
+        schema: z.string().uuid(),
+      },
+    ],
+    response: ProcedureDetail,
+  },
+  {
+    method: 'post',
+    path: '/process/rest/procedures/safety/generate-sop/',
+    alias: 'process_rest_procedures_safety_generate_sop_create',
+    description: `Generate a new Standard Operating Procedure.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: SOPGenerateRequestRequest,
+      },
+    ],
+    response: ProcedureDetail,
+  },
+  {
+    method: 'post',
+    path: '/process/rest/procedures/safety/generate-swp/',
+    alias: 'process_rest_procedures_safety_generate_swp_create',
+    description: `Generate a new Safe Work Procedure.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: SWPGenerateRequestRequest,
+      },
+    ],
+    response: ProcedureDetail,
+  },
+  {
+    method: 'post',
+    path: '/process/rest/safety-ai/generate-controls/',
+    alias: 'process_rest_safety_ai_generate_controls_create',
+    description: `Generate controls for hazards using AI.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: GenerateControlsRequestRequest,
+      },
+    ],
+    response: GenerateControlsResponse,
+  },
+  {
+    method: 'post',
+    path: '/process/rest/safety-ai/generate-hazards/',
+    alias: 'process_rest_safety_ai_generate_hazards_create',
+    description: `Generate hazards for a task description using AI.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: z.object({ task_description: z.string().min(1) }),
+      },
+    ],
+    response: GenerateHazardsResponse,
+  },
+  {
+    method: 'post',
+    path: '/process/rest/safety-ai/improve-document/',
+    alias: 'process_rest_safety_ai_improve_document_create',
+    description: `Improve an entire document using AI.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ImproveDocumentRequestRequest,
+      },
+    ],
+    response: ImproveDocumentResponse,
+  },
+  {
+    method: 'post',
+    path: '/process/rest/safety-ai/improve-section/',
+    alias: 'process_rest_safety_ai_improve_section_create',
+    description: `Improve a section of text using AI.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: ImproveSectionRequestRequest,
+      },
+    ],
+    response: z.object({ improved_text: z.string() }),
   },
   {
     method: 'get',

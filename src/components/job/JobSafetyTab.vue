@@ -133,6 +133,7 @@
     :is-open="isWizardOpen"
     :document-id="wizardDocument.id"
     :document-type="wizardDocument.document_type as SafetyDocumentType"
+    category="jsa"
     @close="closeWizard"
     @saved="handleWizardSaved"
   />
@@ -163,7 +164,7 @@ import {
 } from '@/components/ui/dialog'
 import SafetyWizardModal from '@/components/process-documents/safety-wizard/SafetyWizardModal.vue'
 import { useJsaSwpStore } from '@/stores/jsaSwpDocuments'
-import type { ProcessDocumentListItem, SafetyDocumentType } from '@/types/processDocument.types'
+import type { ProcedureListItem, SafetyDocumentType } from '@/types/processDocument.types'
 import { formatDate } from '@/utils/string-formatting'
 
 interface Props {
@@ -174,7 +175,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  'jsa-generated': [doc: ProcessDocumentListItem]
+  'jsa-generated': [doc: ProcedureListItem]
   'jsa-deleted': [docId: string]
 }>()
 
@@ -183,9 +184,9 @@ const store = useJsaSwpStore()
 
 // Local state
 const isDeleteDialogOpen = ref(false)
-const documentToDelete = ref<ProcessDocumentListItem | null>(null)
+const documentToDelete = ref<ProcedureListItem | null>(null)
 const isWizardOpen = ref(false)
-const wizardDocument = ref<ProcessDocumentListItem | null>(null)
+const wizardDocument = ref<ProcedureListItem | null>(null)
 
 // Computed
 const documents = computed(() => store.getDocumentsByJobId(props.jobId))
@@ -239,13 +240,13 @@ async function handleGenerateJSA() {
   }
 }
 
-function openInGoogleDocs(doc: ProcessDocumentListItem) {
+function openInGoogleDocs(doc: ProcedureListItem) {
   if (doc.google_doc_url) {
     window.open(doc.google_doc_url, '_blank')
   }
 }
 
-function openWizard(doc: ProcessDocumentListItem) {
+function openWizard(doc: ProcedureListItem) {
   wizardDocument.value = doc
   isWizardOpen.value = true
 }
@@ -261,7 +262,7 @@ function handleWizardSaved() {
   toast.success('Document saved successfully!')
 }
 
-function confirmDelete(doc: ProcessDocumentListItem) {
+function confirmDelete(doc: ProcedureListItem) {
   documentToDelete.value = doc
   isDeleteDialogOpen.value = true
 }
@@ -271,7 +272,7 @@ async function handleDelete() {
 
   const docId = documentToDelete.value.id
   try {
-    await store.deleteDocument(docId, 'jsa', props.jobId)
+    await store.deleteDocument('jsa', docId, props.jobId)
     toast.success('Document deleted')
     emit('jsa-deleted', docId)
   } catch {

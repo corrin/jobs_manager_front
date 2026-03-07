@@ -1,19 +1,31 @@
 <template>
   <div>
     <!-- Loading -->
-    <div v-if="isLoading" class="flex items-center gap-2 py-6 text-muted-foreground">
+    <div
+      v-if="isLoading"
+      class="flex items-center gap-2 py-6 text-muted-foreground"
+      data-automation-id="EntriesTable-loading"
+    >
       <Loader2 class="size-4 animate-spin" />
       Loading entries...
     </div>
 
     <!-- Empty state -->
-    <p v-else-if="sortedEntries.length === 0" class="text-muted-foreground text-sm py-6">
+    <p
+      v-else-if="sortedEntries.length === 0"
+      class="text-muted-foreground text-sm py-6"
+      data-automation-id="EntriesTable-empty"
+    >
       No entries yet. Add the first entry above.
     </p>
 
     <!-- Table -->
-    <div v-else class="border rounded-md overflow-x-auto">
-      <table class="w-full text-sm">
+    <div
+      v-else
+      class="border rounded-md overflow-x-auto"
+      data-automation-id="EntriesTable-container"
+    >
+      <table class="w-full text-sm" data-automation-id="EntriesTable-table">
         <thead class="bg-muted/50">
           <tr>
             <th class="text-left px-4 py-2 font-medium whitespace-nowrap">Date</th>
@@ -33,6 +45,7 @@
             v-for="entry in sortedEntries"
             :key="entry.id"
             class="border-t hover:bg-muted/30 transition-colors"
+            :data-automation-id="`EntriesTable-row-${entry.id}`"
           >
             <td class="px-4 py-2 whitespace-nowrap">{{ formatDate(entry.entry_date) }}</td>
             <td class="px-4 py-2 whitespace-nowrap">{{ entry.entered_by_name ?? '-' }}</td>
@@ -44,6 +57,7 @@
                 type="button"
                 class="inline-flex items-center justify-center rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 title="Edit entry"
+                :data-automation-id="`EntriesTable-edit-${entry.id}`"
                 @click="emit('edit', entry)"
               >
                 <Pencil class="size-4" />
@@ -59,10 +73,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Loader2, Pencil } from 'lucide-vue-next'
-import type { ProcessDocumentEntry, FormSchema, FormField } from '@/types/processDocument.types'
+import type { FormEntry, FormSchema, FormField } from '@/types/processDocument.types'
 
 interface Props {
-  entries: ProcessDocumentEntry[]
+  entries: FormEntry[]
   schema: FormSchema
   isLoading: boolean
 }
@@ -70,7 +84,7 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  (e: 'edit', entry: ProcessDocumentEntry): void
+  (e: 'edit', entry: FormEntry): void
 }>()
 
 const sortedEntries = computed(() => {
@@ -84,7 +98,7 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString()
 }
 
-function formatCellValue(entry: ProcessDocumentEntry, field: FormField): string {
+function formatCellValue(entry: FormEntry, field: FormField): string {
   const data = entry.data as Record<string, unknown> | undefined
   if (!data) return '-'
 

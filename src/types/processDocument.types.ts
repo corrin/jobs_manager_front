@@ -1,5 +1,5 @@
 /**
- * Types for Process Documents (procedures, forms, registers, references)
+ * Types for Process Documents (forms + procedures, split by category)
  * Inferred from generated API schemas where possible.
  */
 
@@ -7,23 +7,36 @@ import { z } from 'zod'
 import { schemas } from '@/api/generated/api'
 
 // ============================================================
-// Schema-derived types (source of truth: generated API)
+// Schema-derived types — Forms
 // ============================================================
 
-export type ProcessDocumentListItem = z.infer<typeof schemas.ProcessDocumentList>
-export type ProcessDocument = z.infer<typeof schemas.ProcessDocument>
-export type ProcessDocumentEntry = z.infer<typeof schemas.ProcessDocumentEntry>
-export type ProcessDocumentCreateRequest = z.infer<typeof schemas.ProcessDocumentCreateRequest>
-export type ProcessDocumentUpdateRequest = z.infer<typeof schemas.ProcessDocumentUpdateRequest>
-export type ProcessDocumentEntryRequest = z.infer<typeof schemas.ProcessDocumentEntryRequest>
-export type ProcessDocumentContentResponse = z.infer<typeof schemas.ProcessDocumentContentResponse>
-export type ProcessDocumentContentUpdateRequest = z.infer<
-  typeof schemas.ProcessDocumentContentUpdateRequest
->
+export type FormListItem = z.infer<typeof schemas.FormList>
+export type FormDetail = z.infer<typeof schemas.FormDetail>
+export type FormCreateRequest = z.infer<typeof schemas.FormCreateRequest>
+export type FormUpdateRequest = z.infer<typeof schemas.FormUpdateRequest>
+export type FormEntry = z.infer<typeof schemas.FormEntry>
+export type FormEntryRequest = z.infer<typeof schemas.FormEntryRequest>
+export type FormDocumentType = z.infer<typeof schemas.FormDocumentTypeEnum>
+export type FormStatus = z.infer<typeof schemas.FormStatusEnum>
 
-// Enum types derived from schema
-export type ProcessDocumentType = z.infer<typeof schemas.DocumentTypeEnum>
-export type ProcessDocumentStatus = z.infer<typeof schemas.ProcessDocumentStatusEnum>
+// ============================================================
+// Schema-derived types — Procedures
+// ============================================================
+
+export type ProcedureListItem = z.infer<typeof schemas.ProcedureList>
+export type ProcedureDetail = z.infer<typeof schemas.ProcedureDetail>
+export type ProcedureCreateRequest = z.infer<typeof schemas.ProcedureCreateRequest>
+export type ProcedureUpdateRequest = z.infer<typeof schemas.ProcedureUpdateRequest>
+export type ProcedureDocumentType = z.infer<typeof schemas.ProcedureDocumentTypeEnum>
+export type ProcedureContentResponse = z.infer<typeof schemas.ProcedureContentResponse>
+export type ProcedureContentUpdateRequest = z.infer<typeof schemas.ProcedureContentUpdateRequest>
+export type ProcedureStatus = z.infer<typeof schemas.ProcedureStatusEnum>
+
+// ============================================================
+// Shared types
+// ============================================================
+
+export type CategoriesResponse = z.infer<typeof schemas.CategoriesResponse>
 
 // ============================================================
 // AI generation types (JSA/SWP)
@@ -123,9 +136,7 @@ export interface FormSchema {
 }
 
 export interface ProcessDocumentFilters {
-  type: ProcessDocumentType | null
   tags: string[]
-  status: ProcessDocumentStatus | 'all'
-  isTemplate: boolean | null
+  status: string
   search: string
 }

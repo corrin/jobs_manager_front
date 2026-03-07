@@ -271,33 +271,25 @@ const router = createRouter({
     },
     {
       path: '/process-documents',
-      name: 'process-documents',
-      component: () => import('@/views/ProcessDocumentsView.vue'),
-      meta: { requiresAuth: true, title: 'Process Documents - Jobs Manager' },
+      redirect: '/process-documents/procedures/safety',
     },
     {
-      path: '/process-documents/forms/:id',
+      path: '/process-documents/forms/:category',
+      name: 'process-documents-forms',
+      component: () => import('@/views/ProcessDocumentsView.vue'),
+      meta: { requiresAuth: true, title: 'Forms - Jobs Manager', documentType: 'forms' },
+    },
+    {
+      path: '/process-documents/procedures/:category',
+      name: 'process-documents-procedures',
+      component: () => import('@/views/ProcessDocumentsView.vue'),
+      meta: { requiresAuth: true, title: 'Procedures - Jobs Manager', documentType: 'procedures' },
+    },
+    {
+      path: '/process-documents/forms/:category/:id',
       name: 'form-entries',
       component: () => import('@/views/FormEntriesView.vue'),
       meta: { requiresAuth: true, title: 'Form Entries - Jobs Manager' },
-    },
-    {
-      path: '/process-documents/:id',
-      name: 'process-document-detail',
-      component: () => import('@/views/ProcessDocumentDetailView.vue'),
-      meta: { requiresAuth: true, title: 'Process Document - Jobs Manager' },
-    },
-    {
-      path: '/process-documents/jsa',
-      name: 'jsa-list',
-      component: () => import('@/views/JsaListView.vue'),
-      meta: { requiresAuth: true, title: 'Job Safety Analyses - Jobs Manager' },
-    },
-    {
-      path: '/process-documents/swp',
-      name: 'swp-list',
-      component: () => import('@/views/SwpListView.vue'),
-      meta: { requiresAuth: true, title: 'Safe Work Procedures - Jobs Manager' },
     },
   ],
 })
