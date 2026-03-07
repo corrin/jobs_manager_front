@@ -134,7 +134,7 @@
 
           <div class="relative" @click.stop v-if="userInfo.is_office_staff">
             <button
-              @click="toggleDropdown('safety')"
+              @click="toggleDropdown('process')"
               class="flex items-center text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium px-3 py-2 rounded-md duration-200"
             >
               <ShieldCheck class="w-4 h-4 mr-1" /> Process
@@ -149,35 +149,44 @@
               leave-to-class="opacity-0 -translate-y-2 scale-95"
             >
               <div
-                v-if="activeDropdown === 'safety'"
+                v-if="activeDropdown === 'process'"
                 class="absolute top-full left-0 mt-1 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-[60]"
               >
-                <RouterLink
-                  to="/safety/jsa"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                <div
+                  class="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider"
                 >
-                  <ShieldCheck class="w-4 h-4 mr-2" /> Job Safety Analyses
-                </RouterLink>
+                  Forms
+                </div>
                 <RouterLink
-                  to="/safety/swp"
-                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                  v-for="cat in processDocsStore.categories.forms"
+                  :key="'form-' + cat"
+                  :to="`/process-documents/forms/${cat}`"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all capitalize"
                 >
-                  <ClipboardList class="w-4 h-4 mr-2" /> Safe Work Procedures
+                  <ClipboardList class="w-4 h-4 mr-2" /> {{ cat }}
                 </RouterLink>
                 <div class="border-t border-gray-200 my-1"></div>
-                <button
-                  @click="showNotImplemented('Machine Maintenance Schedule')"
-                  class="w-full flex items-center px-4 py-2 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 font-medium transition-all"
+                <div
+                  class="px-4 py-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider"
                 >
-                  <Wrench class="w-4 h-4 mr-2" /> Machine Maintenance
-                </button>
+                  Procedures
+                </div>
+                <RouterLink
+                  v-for="cat in processDocsStore.categories.procedures"
+                  :key="'proc-' + cat"
+                  :to="`/process-documents/procedures/${cat}`"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all capitalize"
+                >
+                  <FileText class="w-4 h-4 mr-2" /> {{ cat }}
+                </RouterLink>
+                <div class="border-t border-gray-200 my-1"></div>
                 <a
                   href="/manual/"
                   target="_blank"
                   @click="activeDropdown = null"
                   class="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-50 font-medium transition-all"
                 >
-                  <GraduationCap class="w-4 h-4 mr-2" /> Staff Training
+                  <GraduationCap class="w-4 h-4 mr-2" /> App Training
                 </a>
               </div>
             </Transition>
@@ -545,7 +554,7 @@
 
               <div class="bg-gray-50 rounded-md" v-if="isOfficeStaff">
                 <button
-                  @click="toggleMobileSection('safety')"
+                  @click="toggleMobileSection('process')"
                   class="w-full flex items-center justify-between px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
                   <span class="flex items-center space-x-2">
@@ -555,7 +564,7 @@
                   <ChevronDown
                     :class="[
                       'h-4 w-4 transition-transform duration-200',
-                      mobileSections.safety ? 'rotate-180' : '',
+                      mobileSections.process ? 'rotate-180' : '',
                     ]"
                   />
                 </button>
@@ -567,38 +576,45 @@
                   leave-from-class="opacity-100 max-h-40"
                   leave-to-class="opacity-0 max-h-0"
                 >
-                  <div v-if="mobileSections.safety" class="overflow-hidden">
+                  <div v-if="mobileSections.process" class="overflow-hidden">
                     <div class="px-3 pb-2 space-y-1">
+                      <div
+                        class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                      >
+                        Forms
+                      </div>
                       <RouterLink
-                        to="/safety/jsa"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        v-for="cat in processDocsStore.categories.forms"
+                        :key="'form-' + cat"
+                        :to="`/process-documents/forms/${cat}`"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all capitalize"
                         @click="closeMobileMenu"
                       >
-                        <ShieldCheck class="w-4 h-4 mr-2" /> Job Safety Analyses
+                        <ClipboardList class="w-4 h-4 mr-2" /> {{ cat }}
                       </RouterLink>
-                      >
-                      <RouterLink
-                        to="/safety/swp"
-                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
-                        @click="closeMobileMenu"
-                      >
-                        <ClipboardList class="w-4 h-4 mr-2" /> Safe Work Procedures
-                      </RouterLink>
-                      >
                       <div class="border-t border-gray-200 my-1"></div>
-                      <button
-                        @click="showNotImplementedMobile('Machine Maintenance Schedule')"
-                        class="flex items-center w-full text-left px-2 py-1.5 text-sm text-gray-400 hover:text-gray-500 hover:bg-gray-50 rounded transition-all"
+                      <div
+                        class="px-2 py-1 text-xs font-semibold text-gray-500 uppercase tracking-wider"
                       >
-                        <Wrench class="w-4 h-4 mr-2" /> Machine Maintenance
-                      </button>
+                        Procedures
+                      </div>
+                      <RouterLink
+                        v-for="cat in processDocsStore.categories.procedures"
+                        :key="'proc-' + cat"
+                        :to="`/process-documents/procedures/${cat}`"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all capitalize"
+                        @click="closeMobileMenu"
+                      >
+                        <FileText class="w-4 h-4 mr-2" /> {{ cat }}
+                      </RouterLink>
+                      <div class="border-t border-gray-200 my-1"></div>
                       <a
                         href="/manual/"
                         target="_blank"
                         @click="closeMobileMenu()"
                         class="flex items-center w-full text-left px-2 py-1.5 text-sm text-gray-700 hover:text-blue-600 hover:bg-gray-50 rounded transition-all"
                       >
-                        <GraduationCap class="w-4 h-4 mr-2" /> Staff Training
+                        <GraduationCap class="w-4 h-4 mr-2" /> App Training
                       </a>
                     </div>
                   </div>
@@ -802,16 +818,15 @@ import {
   TrendingUp,
   ShieldCheck,
   ClipboardList,
-  Wrench,
   GraduationCap,
   Clock3,
   Users,
   DollarSign,
   Scale,
 } from 'lucide-vue-next'
-import { toast } from 'vue-sonner'
 import { useAppLayout } from '@/composables/useAppLayout'
 import { adminPages } from '@/config/adminPages'
+import { useProcessDocumentsStore } from '@/stores/processDocuments'
 import WorkshopOfficeToggle from '@/components/board/WorkshopOfficeToggle.vue'
 
 const router = useRouter()
@@ -857,17 +872,19 @@ watch(
 
 const activeDropdown = ref<string | null>(null)
 const showMobileMenu = ref(false)
-type MobileSection = 'timesheets' | 'purchases' | 'safety' | 'reports' | 'admin'
+type MobileSection = 'timesheets' | 'purchases' | 'process' | 'reports' | 'admin'
 const mobileSections = ref<Record<MobileSection, boolean>>({
   timesheets: false,
   purchases: false,
-  safety: false,
+  process: false,
   reports: false,
   admin: false,
 })
 
 const { userInfo, handleLogout } = useAppLayout()
 const isOfficeStaff = computed(() => !!userInfo.value?.is_office_staff)
+
+const processDocsStore = useProcessDocumentsStore()
 
 const kanbanNav = computed(() =>
   isOfficeStaff.value
@@ -885,7 +902,7 @@ const toggleMobileMenu = () => {
     mobileSections.value = {
       timesheets: false,
       purchases: false,
-      safety: false,
+      process: false,
       reports: false,
       admin: false,
     }
@@ -897,7 +914,7 @@ const closeMobileMenu = () => {
   mobileSections.value = {
     timesheets: false,
     purchases: false,
-    safety: false,
+    process: false,
     reports: false,
     admin: false,
   }
@@ -905,16 +922,6 @@ const closeMobileMenu = () => {
 
 const toggleMobileSection = (section: MobileSection) => {
   mobileSections.value[section] = !mobileSections.value[section]
-}
-
-const showNotImplemented = (feature: string) => {
-  toast.info(`${feature} is not yet implemented`)
-  activeDropdown.value = null
-}
-
-const showNotImplementedMobile = (feature: string) => {
-  showNotImplemented(feature)
-  closeMobileMenu()
 }
 
 let clickHandler: ((e: MouseEvent) => void) | null = null
@@ -929,6 +936,8 @@ onMounted(() => {
     if (!insideDropdown) activeDropdown.value = null
   }
   document.addEventListener('click', clickHandler)
+
+  processDocsStore.loadCategories()
 })
 
 onUnmounted(() => {

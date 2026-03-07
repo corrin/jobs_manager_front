@@ -250,20 +250,21 @@ import SideBySideEditor from './SideBySideEditor.vue'
 import HazardsList from './HazardsList.vue'
 import ControlsList from './ControlsList.vue'
 import PPEEditor from './PPEEditor.vue'
-import { safetyService } from '@/services/safety.service'
-import { useSafetyDocumentsStore } from '@/stores/safetyDocuments'
+import { processDocumentsService } from '@/services/processDocuments.service'
+import { useJsaSwpStore } from '@/stores/jsaSwpDocuments'
 import type {
   SafetyDocumentContent,
   SafetyTask,
   ControlMeasure,
   WizardStep,
-  DocumentType,
-} from '@/types/safety.types'
+  SafetyDocumentType,
+} from '@/types/processDocument.types'
 
 interface Props {
   isOpen: boolean
   documentId: string
-  documentType: DocumentType
+  documentType: SafetyDocumentType
+  category: string
 }
 
 const props = defineProps<Props>()
@@ -287,7 +288,7 @@ const stepLabels: Record<WizardStep, string> = {
 }
 
 // Store
-const store = useSafetyDocumentsStore()
+const store = useJsaSwpStore()
 
 // State
 const currentStep = ref<WizardStep>('description')
@@ -330,7 +331,10 @@ async function loadDocument() {
   error.value = null
 
   try {
-    const docContent = await safetyService.getDocumentContent(props.documentId)
+    const docContent = await processDocumentsService.getProcedureContent(
+      props.category,
+      props.documentId,
+    )
     content.value = docContent
     originalContent.value = JSON.parse(JSON.stringify(docContent))
     currentStep.value = 'description'
@@ -370,7 +374,7 @@ async function generateDescriptionImprovement() {
 
   isGeneratingImprovement.value = true
   try {
-    const improved = await safetyService.improveSection(
+    const improved = await processDocumentsService.improveSection(
       content.value.description,
       'description',
       `${props.documentType === 'jsa' ? 'Job Safety Analysis' : 'Safe Work Procedure'}`,
@@ -411,7 +415,7 @@ async function generateTaskImprovement(taskIndex: number) {
   generatingTaskIndex.value = taskIndex
   try {
     const task = content.value.tasks[taskIndex]
-    const improved = await safetyService.improveSection(
+    const improved = await processDocumentsService.improveSection(
       task.description,
       'task',
       content.value.description,
@@ -453,7 +457,7 @@ async function generateHazards(taskIndex: number) {
   generatingHazardsIndex.value = taskIndex
   try {
     const task = content.value.tasks[taskIndex]
-    const hazards = await safetyService.generateHazards(task.description)
+    const hazards = await processDocumentsService.generateHazards(task.description)
     // Filter out hazards that already exist
     const existingHazards = new Set(task.potential_hazards.map((h) => h.toLowerCase()))
     const newHazards = hazards.filter((h) => !existingHazards.has(h.toLowerCase()))
@@ -498,7 +502,10 @@ async function generateControls(taskIndex: number) {
   generatingControlsIndex.value = taskIndex
   try {
     const task = content.value.tasks[taskIndex]
-    const controls = await safetyService.generateControls(task.potential_hazards, task.description)
+    const controls = await processDocumentsService.generateControls(
+      task.potential_hazards,
+      task.description,
+    )
     // Filter out controls that already exist
     const existingControls = new Set(task.control_measures.map((c: string) => c.toLowerCase()))
     const newControls = controls.filter((c: string) => !existingControls.has(c.toLowerCase()))
@@ -543,7 +550,7 @@ async function generatePPEImprovement() {
   isGeneratingPPE.value = true
   try {
     const currentPPE = content.value.ppe_requirements.join(', ')
-    const improved = await safetyService.improveSection(
+    const improved = await processDocumentsService.improveSection(
       currentPPE,
       'ppe',
       content.value.description,
@@ -585,7 +592,7 @@ async function saveDocument() {
 
   isSaving.value = true
   try {
-    await store.saveDocumentContent(props.documentId, content.value)
+    await store.saveDocumentContent(props.category, props.documentId, content.value)
     emit('saved')
   } catch {
     toast.error('Failed to save document')

@@ -1,35 +1,34 @@
 /**
- * Safety Documents Store
- * Manages state for JSA/SWP safety documents
+ * JSA/SWP Documents Store
+ * Manages state for JSA/SWP safety documents (procedures)
  */
 
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { safetyService } from '@/services/safety.service'
+import { processDocumentsService } from '@/services/processDocuments.service'
 import type {
-  SafetyDocument,
-  SafetyDocumentList,
+  ProcedureDetail,
+  ProcedureListItem,
   SafetyDocumentContent,
-  DocumentType,
   SWPGenerateRequest,
-} from '@/types/safety.types'
+} from '@/types/processDocument.types'
 
-export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
+export const useJsaSwpStore = defineStore('jsaSwpDocuments', () => {
   // ============================================================
   // State
   // ============================================================
 
   // Documents by job ID (for JSAs)
-  const documentsByJobId = ref<Record<string, SafetyDocumentList[]>>({})
+  const documentsByJobId = ref<Record<string, ProcedureListItem[]>>({})
 
   // All JSAs (for listing page)
-  const jsaDocuments = ref<SafetyDocumentList[]>([])
+  const jsaDocuments = ref<ProcedureListItem[]>([])
 
   // All SWPs (standalone documents)
-  const swpDocuments = ref<SafetyDocumentList[]>([])
+  const swpDocuments = ref<ProcedureListItem[]>([])
 
   // Currently loaded document (full metadata)
-  const currentDocument = ref<SafetyDocument | null>(null)
+  const currentDocument = ref<ProcedureDetail | null>(null)
 
   // Currently loaded document content (from Google Doc)
   const currentContent = ref<SafetyDocumentContent | null>(null)
@@ -47,7 +46,7 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   // ============================================================
 
   const getDocumentsByJobId = computed(() => {
-    return (jobId: string): SafetyDocumentList[] => {
+    return (jobId: string): ProcedureListItem[] => {
       return documentsByJobId.value[jobId] || []
     }
   })
@@ -62,15 +61,12 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   // Actions - Document Loading
   // ============================================================
 
-  /**
-   * Load JSAs for a specific job
-   */
   async function loadJobJSAs(jobId: string): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
-      const docs = await safetyService.listJobJSAs(jobId)
+      const docs = await processDocumentsService.listJobJSAs(jobId)
       documentsByJobId.value = { ...documentsByJobId.value, [jobId]: docs }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load JSAs'
@@ -80,15 +76,12 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     }
   }
 
-  /**
-   * Load all JSAs across all jobs
-   */
   async function loadAllJSAs(): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
-      jsaDocuments.value = await safetyService.listDocuments('jsa')
+      jsaDocuments.value = await processDocumentsService.listProcedures('jsa')
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load JSAs'
       throw e
@@ -97,15 +90,16 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     }
   }
 
-  /**
-   * Load all SWPs
-   */
   async function loadSWPs(): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
-      swpDocuments.value = await safetyService.listSWPs()
+      swpDocuments.value = await processDocumentsService.listProcedures('safety', {
+        tags: ['swp'],
+        status: 'all',
+        search: '',
+      })
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load SWPs'
       throw e
@@ -114,15 +108,12 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     }
   }
 
-  /**
-   * Load a specific document's metadata
-   */
-  async function loadDocument(docId: string): Promise<SafetyDocument> {
+  async function loadDocument(category: string, docId: string): Promise<ProcedureDetail> {
     isLoading.value = true
     error.value = null
 
     try {
-      currentDocument.value = await safetyService.getDocument(docId)
+      currentDocument.value = await processDocumentsService.getProcedure(category, docId)
       return currentDocument.value
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load document'
@@ -132,15 +123,15 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     }
   }
 
-  /**
-   * Load document content from Google Doc
-   */
-  async function loadDocumentContent(docId: string): Promise<SafetyDocumentContent> {
+  async function loadDocumentContent(
+    category: string,
+    docId: string,
+  ): Promise<SafetyDocumentContent> {
     isLoading.value = true
     error.value = null
 
     try {
-      currentContent.value = await safetyService.getDocumentContent(docId)
+      currentContent.value = await processDocumentsService.getProcedureContent(category, docId)
       return currentContent.value
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to load document content'
@@ -154,15 +145,12 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   // Actions - Document Generation
   // ============================================================
 
-  /**
-   * Generate a new JSA for a job
-   */
-  async function generateJobJSA(jobId: string): Promise<SafetyDocument> {
+  async function generateJobJSA(jobId: string): Promise<ProcedureDetail> {
     isGenerating.value = true
     error.value = null
 
     try {
-      const doc = await safetyService.generateJobJSA(jobId)
+      const doc = await processDocumentsService.generateJobJSA(jobId)
 
       // Add to the job's document list
       const existingDocs = documentsByJobId.value[jobId] || []
@@ -178,7 +166,7 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
             title: doc.title,
             site_location: doc.site_location,
             google_doc_url: doc.google_doc_url,
-          },
+          } as ProcedureListItem,
           ...existingDocs,
         ],
       }
@@ -193,15 +181,12 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     }
   }
 
-  /**
-   * Generate a new SWP
-   */
-  async function generateSWP(request: SWPGenerateRequest): Promise<SafetyDocument> {
+  async function generateSWP(request: SWPGenerateRequest): Promise<ProcedureDetail> {
     isGenerating.value = true
     error.value = null
 
     try {
-      const doc = await safetyService.generateSWP(request)
+      const doc = await processDocumentsService.generateSWP(request)
 
       // Add to SWP list
       swpDocuments.value = [
@@ -214,7 +199,7 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
           title: doc.title,
           site_location: doc.site_location,
           google_doc_url: doc.google_doc_url,
-        },
+        } as ProcedureListItem,
         ...swpDocuments.value,
       ]
 
@@ -232,23 +217,18 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   // Actions - Document Updates
   // ============================================================
 
-  /**
-   * Save document content back to Google Doc
-   */
   async function saveDocumentContent(
+    category: string,
     docId: string,
     content: Partial<SafetyDocumentContent>,
-  ): Promise<SafetyDocument> {
+  ): Promise<ProcedureDetail> {
     isSaving.value = true
     error.value = null
 
     try {
-      const doc = await safetyService.updateDocumentContent(docId, content)
+      const doc = await processDocumentsService.updateProcedureContent(category, docId, content)
       currentDocument.value = doc
-
-      // Update timestamp in lists
       updateDocumentInLists(doc)
-
       return doc
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Failed to save document'
@@ -258,32 +238,24 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     }
   }
 
-  /**
-   * Delete a document
-   */
-  async function deleteDocument(
-    docId: string,
-    documentType: DocumentType,
-    jobId?: string,
-  ): Promise<void> {
+  async function deleteDocument(category: string, docId: string, jobId?: string): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
-      await safetyService.deleteDocument(docId)
+      await processDocumentsService.deleteProcedure(category, docId)
 
       // Remove from appropriate list
-      if (documentType === 'jsa' && jobId) {
+      if (jobId) {
         const existingDocs = documentsByJobId.value[jobId] || []
         documentsByJobId.value = {
           ...documentsByJobId.value,
           [jobId]: existingDocs.filter((d) => d.id !== docId),
         }
-      } else {
-        swpDocuments.value = swpDocuments.value.filter((d) => d.id !== docId)
       }
+      swpDocuments.value = swpDocuments.value.filter((d) => d.id !== docId)
+      jsaDocuments.value = jsaDocuments.value.filter((d) => d.id !== docId)
 
-      // Clear current if it was the deleted one
       if (currentDocument.value?.id === docId) {
         currentDocument.value = null
         currentContent.value = null
@@ -300,7 +272,7 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
   // Helper Functions
   // ============================================================
 
-  function updateDocumentInLists(doc: SafetyDocument): void {
+  function updateDocumentInLists(doc: ProcedureDetail): void {
     // Update in job documents
     if (doc.job_id) {
       const jobDocs = documentsByJobId.value[doc.job_id]
@@ -322,18 +294,16 @@ export const useSafetyDocumentsStore = defineStore('safetyDocuments', () => {
     }
 
     // Update in SWP list
-    if (doc.document_type === 'swp') {
-      swpDocuments.value = swpDocuments.value.map((d) =>
-        d.id === doc.id
-          ? {
-              ...d,
-              title: doc.title,
-              site_location: doc.site_location,
-              updated_at: doc.updated_at,
-            }
-          : d,
-      )
-    }
+    swpDocuments.value = swpDocuments.value.map((d) =>
+      d.id === doc.id
+        ? {
+            ...d,
+            title: doc.title,
+            site_location: doc.site_location,
+            updated_at: doc.updated_at,
+          }
+        : d,
+    )
   }
 
   function clearError(): void {
