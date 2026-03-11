@@ -281,6 +281,27 @@
               </p>
             </div>
 
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2"
+                >RDTI Classification</label
+              >
+              <select
+                :value="localJobData.rdti_type || ''"
+                data-automation-id="JobSettingsTab-rdti-type"
+                @change="handleFieldInput('rdti_type', ($event.target as HTMLSelectElement).value)"
+                @blur="handleBlurFlush"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              >
+                <option value="">Unclassified</option>
+                <option value="non_rd">Non-R&amp;D</option>
+                <option value="core_rd">Core R&amp;D</option>
+                <option value="supporting_rd">Supporting R&amp;D</option>
+              </select>
+              <p class="mt-1 text-xs text-gray-500">
+                Research &amp; Development Tax Incentive classification for this job
+              </p>
+            </div>
+
             <div class="flex-grow">
               <RichTextEditor
                 :model-value="(localJobData.notes as string) || ''"
@@ -587,6 +608,8 @@ const handleFieldInput = (field: string, value: string) => {
     localJobData.value.pricing_methodology = newValue as Job['pricing_methodology']
   } else if (field === 'speed_quality_tradeoff') {
     localJobData.value.speed_quality_tradeoff = newValue as Job['speed_quality_tradeoff']
+  } else if (field === 'rdti_type') {
+    localJobData.value.rdti_type = (newValue || null) as Job['rdti_type']
   }
 
   // Queue autosave change
@@ -662,6 +685,7 @@ watch(
         price_cap: null,
         default_xero_pay_item_id: null,
         default_xero_pay_item_name: null,
+        rdti_type: null,
         // Include basic info fields - will be updated when basicInfo loads
         description: null,
         delivery_date: null,
@@ -695,6 +719,7 @@ watch(
       price_cap: newJobData.price_cap ?? null,
       default_xero_pay_item_id: newJobData.default_xero_pay_item_id ?? null,
       default_xero_pay_item_name: newJobData.default_xero_pay_item_name ?? null,
+      rdti_type: newJobData.rdti_type ?? null,
     }
 
     // Preserve existing basic info fields when updating with header data
@@ -1094,6 +1119,7 @@ const autosave = createJobAutosave({
       order_number: data.order_number || null,
       notes: data.notes || null,
       delivery_date: data.delivery_date || null,
+      rdti_type: data.rdti_type ?? null,
     }
   },
   applyOptimistic: (patch) => {
@@ -1193,6 +1219,7 @@ const autosave = createJobAutosave({
           next.order_number = (payload.order_number as string | null) ?? null
         if ('notes' in payload) next.notes = (payload.notes as string | null) ?? null
         if ('price_cap' in payload) next.price_cap = (payload.price_cap as number | null) ?? null
+        if ('rdti_type' in payload) next.rdti_type = (payload.rdti_type as Job['rdti_type']) ?? null
         return next
       }
 
@@ -1244,6 +1271,11 @@ const autosave = createJobAutosave({
           nextBaseline.pricing_methodology = serverJobDetail.pricing_methodology
           localJobData.value.pricing_methodology = serverJobDetail.pricing_methodology
           headerPatch.pricing_methodology = serverJobDetail.pricing_methodology
+        }
+        if (touchedKeys.includes('rdti_type')) {
+          nextBaseline.rdti_type = serverJobDetail.rdti_type ?? null
+          localJobData.value.rdti_type = serverJobDetail.rdti_type ?? null
+          headerPatch.rdti_type = serverJobDetail.rdti_type ?? null
         }
         if (touchedKeys.includes('speed_quality_tradeoff')) {
           nextBaseline.speed_quality_tradeoff = serverJobDetail.speed_quality_tradeoff
@@ -1356,6 +1388,12 @@ const autosave = createJobAutosave({
           nextBaseline.pricing_methodology = pricingVal as Job['pricing_methodology']
           localJobData.value.pricing_methodology = pricingVal as Job['pricing_methodology']
           headerPatch.pricing_methodology = pricingVal as Job['pricing_methodology']
+        }
+        if (touchedKeys.includes('rdti_type')) {
+          const rdtiVal = coerceNullableString(partialPayload.rdti_type)
+          nextBaseline.rdti_type = (rdtiVal ?? null) as Job['rdti_type']
+          localJobData.value.rdti_type = (rdtiVal ?? null) as Job['rdti_type']
+          headerPatch.rdti_type = (rdtiVal ?? null) as Job['rdti_type']
         }
         if (touchedKeys.includes('speed_quality_tradeoff')) {
           const tradeoffVal =
@@ -1512,6 +1550,7 @@ onMounted(() => {
           status: response.status,
           pricing_methodology: response.pricing_methodology,
           speed_quality_tradeoff: response.speed_quality_tradeoff ?? 'normal',
+          rdti_type: response.rdti_type ?? null,
           fully_invoiced: response.fully_invoiced,
           quoted: response.quoted,
           quote_acceptance_date: response.quote_acceptance_date,

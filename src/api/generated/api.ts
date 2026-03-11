@@ -197,6 +197,36 @@ const PayrollReconciliationResponse = z.object({
   heatmap: PayrollHeatmap,
   grand_totals: PayrollGrandTotals,
 })
+const RDTISpendCategorySummary = z.object({
+  rdti_type: z.string(),
+  label: z.string(),
+  hours: z.number(),
+  cost: z.number(),
+  revenue: z.number(),
+  job_count: z.number().int(),
+})
+const RDTISpendJobDetail = z.object({
+  job_id: z.string(),
+  job_number: z.number().int(),
+  job_name: z.string(),
+  client_name: z.string(),
+  rdti_type: z.string(),
+  hours: z.number(),
+  cost: z.number(),
+  revenue: z.number(),
+})
+const RDTISpendTotals = z.object({
+  hours: z.number(),
+  cost: z.number(),
+  revenue: z.number(),
+})
+const RDTISpendResponse = z.object({
+  start_date: z.string(),
+  end_date: z.string(),
+  summary: z.array(RDTISpendCategorySummary),
+  jobs: z.array(RDTISpendJobDetail),
+  totals: RDTISpendTotals,
+})
 const StaffPerformanceTeamAverages = z.object({
   billable_percentage: z.number(),
   revenue_per_hour: z.number(),
@@ -1337,6 +1367,9 @@ const XeroInvoice = z.object({
   status: InvoiceStatusEnum.optional(),
   online_url: z.string().max(200).url().nullish(),
 })
+const RdtiTypeEnum = z.enum(['non_rd', 'core_rd', 'supporting_rd'])
+const BlankEnum = z.unknown()
+const NullEnum = z.unknown()
 const Job = z.object({
   id: z.string().uuid(),
   name: z.string().max(100),
@@ -1372,6 +1405,7 @@ const Job = z.object({
   xero_invoices: z.array(XeroInvoice),
   shop_job: z.boolean(),
   rejected_flag: z.boolean().optional(),
+  rdti_type: z.union([RdtiTypeEnum, BlankEnum, NullEnum]).nullish(),
   default_xero_pay_item_id: z.string().uuid().nullish(),
   default_xero_pay_item_name: z.string().nullable(),
 })
@@ -1573,6 +1607,7 @@ const JobHeaderResponse = z.object({
   quote_acceptance_date: z.string().datetime({ offset: true }).nullish(),
   paid: z.boolean().optional(),
   rejected_flag: z.boolean().optional(),
+  rdti_type: z.union([RdtiTypeEnum, BlankEnum, NullEnum]).nullish(),
 })
 const JobInvoicesResponse = z.object({ invoices: z.array(Invoice) })
 const JobQuoteAcceptanceRequest = z.object({
@@ -1640,6 +1675,7 @@ const JobSummary = z.object({
   xero_invoices: z.array(XeroInvoice),
   shop_job: z.boolean(),
   rejected_flag: z.boolean().optional(),
+  rdti_type: z.union([RdtiTypeEnum, BlankEnum, NullEnum]).nullish(),
   default_xero_pay_item_id: z.string().uuid().nullish(),
   default_xero_pay_item_name: z.string().nullable(),
 })
@@ -1983,6 +2019,8 @@ const FormEntry = z.object({
   form: z.string().uuid(),
   job: z.string().uuid().nullish(),
   job_number: z.string().nullable(),
+  staff: z.string().uuid().nullish(),
+  staff_name: z.string().nullable(),
   entry_date: z.string(),
   entered_by: z.string().uuid().nullable(),
   entered_by_name: z.string().nullable(),
@@ -1991,12 +2029,14 @@ const FormEntry = z.object({
 })
 const FormEntryRequest = z.object({
   job: z.string().uuid().nullish(),
+  staff: z.string().uuid().nullish(),
   entry_date: z.string(),
   data: z.unknown().optional(),
 })
 const PatchedFormEntryRequest = z
   .object({
     job: z.string().uuid().nullable(),
+    staff: z.string().uuid().nullable(),
     entry_date: z.string(),
     data: z.unknown(),
   })
@@ -2287,8 +2327,6 @@ const MetalTypeEnum = z.enum([
   'unspecified',
   'other',
 ])
-const BlankEnum = z.unknown()
-const NullEnum = z.unknown()
 const PurchaseOrderLine = z.object({
   id: z.string().uuid(),
   description: z.string().max(200),
@@ -2796,6 +2834,10 @@ export const schemas = {
   PayrollHeatmap,
   PayrollGrandTotals,
   PayrollReconciliationResponse,
+  RDTISpendCategorySummary,
+  RDTISpendJobDetail,
+  RDTISpendTotals,
+  RDTISpendResponse,
   StaffPerformanceTeamAverages,
   StaffPerformanceJobBreakdown,
   StaffPerformanceStaffData,
@@ -2926,6 +2968,9 @@ export const schemas = {
   Invoice,
   XeroQuote,
   XeroInvoice,
+  RdtiTypeEnum,
+  BlankEnum,
+  NullEnum,
   Job,
   JobEvent,
   JobData,
@@ -3053,8 +3098,6 @@ export const schemas = {
   PurchasingErrorResponse,
   PurchaseOrderDetailStatusEnum,
   MetalTypeEnum,
-  BlankEnum,
-  NullEnum,
   PurchaseOrderLine,
   PurchaseOrderDetail,
   PurchaseOrderLineUpdateRequest,
@@ -3245,6 +3288,35 @@ Returns:
     alias: 'accounting_api_reports_profit_and_loss_retrieve',
     requestFormat: 'json',
     response: z.object({}).partial().passthrough(),
+  },
+  {
+    method: 'get',
+    path: '/accounting/api/reports/rdti-spend/',
+    alias: 'accounting_api_reports_rdti_spend_retrieve',
+    description: `API endpoint for the RDTI spend report.`,
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'end_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+      {
+        name: 'start_date',
+        type: 'Query',
+        schema: z.string(),
+      },
+    ],
+    response: RDTISpendResponse,
+    errors: [
+      {
+        status: 400,
+        schema: z.object({
+          error: z.string(),
+          details: z.unknown().optional(),
+        }),
+      },
+    ],
   },
   {
     method: 'get',

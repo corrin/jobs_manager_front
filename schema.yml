@@ -178,6 +178,40 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
+  /accounting/api/reports/rdti-spend/:
+    get:
+      operationId: accounting_api_reports_rdti_spend_retrieve
+      description: API endpoint for the RDTI spend report.
+      parameters:
+        - in: query
+          name: end_date
+          schema:
+            type: string
+          description: End date (YYYY-MM-DD)
+          required: true
+        - in: query
+          name: start_date
+          schema:
+            type: string
+          description: Start date (YYYY-MM-DD)
+          required: true
+      tags:
+        - accounting
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RDTISpendResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandardError'
+          description: ''
   /accounting/api/reports/sales-forecast/:
     get:
       operationId: sales_forecast_list
@@ -10378,6 +10412,15 @@ components:
           type: string
           readOnly: true
           nullable: true
+        staff:
+          type: string
+          format: uuid
+          nullable: true
+          description: Staff member this entry is about (e.g. inductee, trainee)
+        staff_name:
+          type: string
+          readOnly: true
+          nullable: true
         entry_date:
           type: string
           format: date
@@ -10406,6 +10449,7 @@ components:
         - form
         - id
         - job_number
+        - staff_name
     FormEntryRequest:
       type: object
       description: Serializer for FormEntry — filled-in instances of forms.
@@ -10415,6 +10459,11 @@ components:
           format: uuid
           nullable: true
           description: Linked job (e.g. incident forms)
+        staff:
+          type: string
+          format: uuid
+          nullable: true
+          description: Staff member this entry is about (e.g. inductee, trainee)
         entry_date:
           type: string
           format: date
@@ -10813,6 +10862,18 @@ components:
           type: boolean
           description: Indicates if this job was rejected (shown in Archived with
             rejected styling)
+        rdti_type:
+          nullable: true
+          description: |-
+            R&D Tax Incentive classification for this job
+
+            * `non_rd` - Non-R&D
+            * `core_rd` - Core R&D
+            * `supporting_rd` - Supporting R&D
+          oneOf:
+            - $ref: '#/components/schemas/RdtiTypeEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
         default_xero_pay_item_id:
           type: string
           format: uuid
@@ -11693,6 +11754,18 @@ components:
           type: boolean
           description: Indicates if this job was rejected (shown in Archived with
             rejected styling)
+        rdti_type:
+          nullable: true
+          description: |-
+            R&D Tax Incentive classification for this job
+
+            * `non_rd` - Non-R&D
+            * `core_rd` - Core R&D
+            * `supporting_rd` - Supporting R&D
+          oneOf:
+            - $ref: '#/components/schemas/RdtiTypeEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
       required:
         - client_id
         - client_name
@@ -12253,6 +12326,18 @@ components:
           type: boolean
           description: Indicates if this job was rejected (shown in Archived with
             rejected styling)
+        rdti_type:
+          nullable: true
+          description: |-
+            R&D Tax Incentive classification for this job
+
+            * `non_rd` - Non-R&D
+            * `core_rd` - Core R&D
+            * `supporting_rd` - Supporting R&D
+          oneOf:
+            - $ref: '#/components/schemas/RdtiTypeEnum'
+            - $ref: '#/components/schemas/BlankEnum'
+            - $ref: '#/components/schemas/NullEnum'
         default_xero_pay_item_id:
           type: string
           format: uuid
@@ -13868,6 +13953,11 @@ components:
           format: uuid
           nullable: true
           description: Linked job (e.g. incident forms)
+        staff:
+          type: string
+          format: uuid
+          nullable: true
+          description: Staff member this entry is about (e.g. inductee, trainee)
         entry_date:
           type: string
           format: date
@@ -15931,6 +16021,117 @@ components:
         * `ACCEPTED` - Accepted
         * `INVOICED` - Invoiced
         * `DELETED` - Deleted
+    RDTISpendCategorySummary:
+      type: object
+      description: Summary data for a single RDTI classification category.
+      properties:
+        rdti_type:
+          type: string
+        label:
+          type: string
+        hours:
+          type: number
+          format: double
+        cost:
+          type: number
+          format: double
+        revenue:
+          type: number
+          format: double
+        job_count:
+          type: integer
+      required:
+        - cost
+        - hours
+        - job_count
+        - label
+        - rdti_type
+        - revenue
+    RDTISpendJobDetail:
+      type: object
+      description: Per-job detail row in the RDTI spend report.
+      properties:
+        job_id:
+          type: string
+        job_number:
+          type: integer
+        job_name:
+          type: string
+        client_name:
+          type: string
+        rdti_type:
+          type: string
+        hours:
+          type: number
+          format: double
+        cost:
+          type: number
+          format: double
+        revenue:
+          type: number
+          format: double
+      required:
+        - client_name
+        - cost
+        - hours
+        - job_id
+        - job_name
+        - job_number
+        - rdti_type
+        - revenue
+    RDTISpendResponse:
+      type: object
+      description: Top-level response for the RDTI spend report.
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        summary:
+          type: array
+          items:
+            $ref: '#/components/schemas/RDTISpendCategorySummary'
+        jobs:
+          type: array
+          items:
+            $ref: '#/components/schemas/RDTISpendJobDetail'
+        totals:
+          $ref: '#/components/schemas/RDTISpendTotals'
+      required:
+        - end_date
+        - jobs
+        - start_date
+        - summary
+        - totals
+    RDTISpendTotals:
+      type: object
+      description: Grand totals across all RDTI categories.
+      properties:
+        hours:
+          type: number
+          format: double
+        cost:
+          type: number
+          format: double
+        revenue:
+          type: number
+          format: double
+      required:
+        - cost
+        - hours
+        - revenue
+    RdtiTypeEnum:
+      enum:
+        - non_rd
+        - core_rd
+        - supporting_rd
+      type: string
+      description: |-
+        * `non_rd` - Non-R&D
+        * `core_rd` - Core R&D
+        * `supporting_rd` - Supporting R&D
     RoleEnum:
       enum:
         - user
