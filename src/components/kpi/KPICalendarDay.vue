@@ -62,7 +62,7 @@
 import { computed } from 'vue'
 import { schemas } from '@/api/generated/api'
 import { z } from 'zod'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, formatHoursDisplay } from '@/utils/string-formatting'
 
 type DayKPI = z.infer<typeof schemas.KPIDayData>
 type Thresholds = z.infer<typeof schemas.KPIThresholds>
@@ -99,7 +99,7 @@ const adjustmentProfit = computed(() => {
 })
 
 function formatHours(hours: number): string {
-  return `${Math.round(hours)}h`
+  return formatHoursDisplay(hours)
 }
 </script>
 

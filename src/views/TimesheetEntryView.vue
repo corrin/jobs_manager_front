@@ -66,7 +66,7 @@
               <span class="font-semibold" :class="hoursStatusClass">{{
                 formatHoursDisplay(todayStats.totalHours)
               }}</span>
-              <span class="text-gray-400"> / {{ formatHoursDisplay(scheduledHours) }}h</span>
+              <span class="text-gray-400"> / {{ formatHoursDisplay(scheduledHours) }}</span>
             </div>
           </div>
 
@@ -246,7 +246,7 @@
               <span class="font-semibold" :class="hoursStatusClass">{{
                 formatHoursDisplay(todayStats.totalHours)
               }}</span>
-              <span class="text-gray-400"> / {{ formatHoursDisplay(scheduledHours) }}h</span>
+              <span class="text-gray-400"> / {{ formatHoursDisplay(scheduledHours) }}</span>
             </div>
 
             <Button
@@ -405,9 +405,9 @@
                         <div class="flex justify-between text-xs">
                           <span class="text-gray-600">Progress</span>
                           <span class="font-medium">
-                            {{ formatHoursDisplay(jobData.actualHours) }}h
+                            {{ formatHoursDisplay(jobData.actualHours) }}
                             <span v-if="jobData.estimatedHours > 0">
-                              / {{ formatHoursDisplay(jobData.estimatedHours) }}h
+                              / {{ formatHoursDisplay(jobData.estimatedHours) }}
                             </span>
                           </span>
                         </div>
@@ -438,7 +438,7 @@
                               {{ jobData.completionPercentage.toFixed(1) }}% complete
                             </span>
                             <span v-else>
-                              {{ formatHoursDisplay(jobData.actualHours) }}h logged
+                              {{ formatHoursDisplay(jobData.actualHours) }} logged
                             </span>
                           </span>
                           <span v-if="jobData.isOverBudget" class="text-red-600 font-medium">
@@ -490,7 +490,7 @@
                                 formatHoursDisplay(consolidatedSummary.totalHours)
                               }}</span>
                               <span class="text-sm font-normal text-gray-400"
-                                >/ {{ formatHoursDisplay(scheduledHours) }}h</span
+                                >/ {{ formatHoursDisplay(scheduledHours) }}</span
                               >
                             </p>
                           </div>

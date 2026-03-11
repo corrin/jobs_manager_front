@@ -4,6 +4,7 @@ import { jobService } from '@/services/job.service'
 import { toast } from 'vue-sonner'
 import DOMPurify from 'dompurify'
 import type { z } from 'zod'
+import { formatHoursDisplay } from '@/utils/string-formatting'
 
 type Job = z.infer<typeof schemas.Job>
 type JobSummary = z.infer<typeof schemas.JobSummary>
@@ -58,8 +59,7 @@ export function useWorkshopJob(jobId: Ref<string>) {
   const workshopTimeDisplay = computed(() => {
     const hours = workshopTime.value.hours
     if (hours === null) return '-'
-    const rounded = Math.round(hours * 10) / 10
-    return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)} h`
+    return formatHoursDisplay(hours)
   })
 
   async function loadJob() {

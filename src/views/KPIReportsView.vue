@@ -336,7 +336,7 @@ import MonthSelector from '@/components/kpi/MonthSelector.vue'
 import { kpiService } from '@/services/kpi.service'
 import type { KPICalendarResponse, DayKPI } from '@/services/kpi.service'
 import { BarChart3, Download, RefreshCw, Settings } from 'lucide-vue-next'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, formatHoursDisplay } from '@/utils/string-formatting'
 
 const router = useRouter()
 const loading = ref(false)
@@ -397,7 +397,7 @@ async function fetchKPIData() {
 
 const avgBillableHoursDisplay = computed(() => {
   if (!kpiData.value) return '0h'
-  return `${kpiData.value.monthly_totals.avg_billable_hours_so_far.toFixed(1)}h`
+  return formatHoursDisplay(kpiData.value.monthly_totals.avg_billable_hours_so_far)
 })
 
 const utilizationTrend = computed(() => {

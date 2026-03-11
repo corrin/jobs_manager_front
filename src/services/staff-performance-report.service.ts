@@ -132,7 +132,7 @@ export class StaffPerformanceReportService {
   }
 
   formatHours(hours: number): string {
-    return `${formatHoursDisplay(hours)}h`
+    return formatHoursDisplay(hours)
   }
 
   formatPercentage(percentage: number): string {

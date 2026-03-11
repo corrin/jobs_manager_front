@@ -32,7 +32,7 @@
                   <div class="min-w-0">
                     <p class="text-xs md:text-sm text-gray-600">Total Hours</p>
                     <p class="text-base md:text-lg font-semibold">
-                      {{ formatHoursDisplay(consolidatedSummary.totalHours) }}h
+                      {{ formatHoursDisplay(consolidatedSummary.totalHours) }}
                     </p>
                   </div>
                 </div>
@@ -128,8 +128,8 @@
                       <div class="flex justify-between text-sm">
                         <span class="text-gray-600">Hours Progress</span>
                         <span class="font-medium">
-                          {{ formatHoursDisplay(jobData.actualHours) }}h /
-                          {{ formatHoursDisplay(jobData.estimatedHours) }}h
+                          {{ formatHoursDisplay(jobData.actualHours) }} /
+                          {{ formatHoursDisplay(jobData.estimatedHours) }}
                         </span>
                       </div>
 

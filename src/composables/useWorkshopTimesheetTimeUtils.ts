@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import { formatHoursDisplay } from '@/utils/string-formatting'
 
 export function ensureTimeWithSeconds(time: string): string {
   if (!time) return '00:00:00'
@@ -52,7 +53,5 @@ export function calculateDurationHours(startTime: string, endTime: string): numb
 }
 
 export function formatHoursValue(hours: number): string {
-  const safe = Number.isFinite(hours) ? hours : 0
-  const rounded = Math.round(safe * 100) / 100
-  return parseFloat(rounded.toFixed(2)).toString()
+  return formatHoursDisplay(hours)
 }

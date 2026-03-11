@@ -148,7 +148,7 @@ export function useTimesheetEntryGrid(
         const isOvertime = hours > 8
         const color = isOvertime ? '#DC2626' : '#374151'
         const weight = isOvertime ? '600' : '400'
-        return `<span style="color: ${color}; font-weight: ${weight};">${formatHoursDisplay(hours)}h</span>`
+        return `<span style="color: ${color}; font-weight: ${weight};">${formatHoursDisplay(hours)}</span>`
       },
       cellClass: 'text-right',
     },

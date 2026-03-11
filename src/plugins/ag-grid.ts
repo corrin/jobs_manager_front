@@ -1,6 +1,6 @@
 import { ModuleRegistry, AllCommunityModule, themeQuartz } from 'ag-grid-community'
 import type { ValueFormatterParams } from 'ag-grid-community'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, formatHoursDisplay } from '@/utils/string-formatting'
 
 ModuleRegistry.registerModules([AllCommunityModule])
 
@@ -67,7 +67,7 @@ export const defaultGridOptions = {
       cellClass: 'numeric-cell hours-cell',
       valueFormatter: (params: ValueFormatterParams) => {
         if (params.value == null) return ''
-        return `${Number(params.value).toFixed(2)}h`
+        return formatHoursDisplay(Number(params.value))
       },
     },
   },
