@@ -37,7 +37,7 @@ export function useWorkshopJobBudgets(selectedJobIds: ComputedRef<string[]>) {
     return overBudgetJobs.value
       .map(
         (meta) =>
-          `#${meta.job.job_number} ${meta.job.name}: ${formatHoursValue(meta.actualHours)}h / ${formatHoursValue(meta.estimatedHours)}h`,
+          `#${meta.job.job_number} ${meta.job.name}: ${formatHoursValue(meta.actualHours)} / ${formatHoursValue(meta.estimatedHours)}`,
       )
       .join('\n')
   })

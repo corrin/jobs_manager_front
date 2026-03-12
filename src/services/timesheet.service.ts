@@ -3,6 +3,7 @@ import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import { debugLog } from '../utils/debug'
 import { toLocalDateString } from '../utils/dateUtils'
+import { formatHoursDisplay } from '@/utils/string-formatting'
 import type { z } from 'zod'
 
 type Staff = z.infer<typeof schemas.ModernStaff>
@@ -98,7 +99,7 @@ export class TimesheetService {
   }
 
   static formatHours(hours: number): string {
-    return hours.toFixed(2)
+    return formatHoursDisplay(hours)
   }
 
   static async getStaffList(): Promise<Staff[]> {

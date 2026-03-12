@@ -2,7 +2,7 @@ import { api } from '@/api/client'
 import { schemas } from '@/api/generated/api'
 import { debugLog } from '@/utils/debug'
 import { toLocalDateString } from '@/utils/dateUtils'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, formatHoursDisplay } from '@/utils/string-formatting'
 import type { z } from 'zod'
 
 // Types for params - keeping as local since they're for input validation
@@ -81,7 +81,7 @@ class KPIService {
   }
 
   formatHours(hours: number): string {
-    return `${Math.round(hours)}h`
+    return formatHoursDisplay(hours)
   }
 
   formatPercentage(value: number): string {

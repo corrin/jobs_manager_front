@@ -16,6 +16,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { schemas } from '@/api/generated/api'
 import { api } from '@/api/client'
 import type { z } from 'zod'
+import { formatHoursDisplay } from '@/utils/string-formatting'
 
 type CostLine = z.infer<typeof schemas.CostLine>
 type KanbanStaff = z.infer<typeof schemas.KanbanStaff>
@@ -102,14 +103,12 @@ function staffNameFor(line: CostLine) {
 
 function formatHours(value: number | null) {
   if (value == null || Number.isNaN(value)) return '-'
-  const rounded = Math.round(value * 10) / 10
-  return Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)
+  return formatHoursDisplay(value)
 }
 
 function formatRemaining(value: number | null) {
   if (value == null || Number.isNaN(value)) return '-'
-  const rounded = Math.round(value * 10) / 10
-  return Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)
+  return formatHoursDisplay(value)
 }
 
 onMounted(async () => {

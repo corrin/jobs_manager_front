@@ -136,7 +136,7 @@
                   /></TableCell>
                   <TableCell>{{ job.job_number }}</TableCell>
                   <TableCell>{{ job.job_name }}</TableCell>
-                  <TableCell>{{ job.total_hours.toFixed(2) }}</TableCell>
+                  <TableCell>{{ formatHoursDisplay(job.total_hours) }}</TableCell>
                   <TableCell>{{ job.total_dollars.toFixed(2) }}</TableCell>
                   <TableCell>
                     <svg class="w-24 h-6">
@@ -255,6 +255,7 @@ import { toast } from 'vue-sonner'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import MonthEndSummary from '@/components/admin/MonthEndSummary.vue'
 import { debugLog } from '../utils/debug'
+import { formatHoursDisplay } from '@/utils/string-formatting'
 
 interface MonthTab {
   key: string

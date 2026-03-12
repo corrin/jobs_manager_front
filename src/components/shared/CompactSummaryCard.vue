@@ -55,9 +55,9 @@
       <!-- Total Hours -->
       <div class="flex justify-between items-center">
         <span class="text-xs text-gray-500">Total Hours</span>
-        <span class="text-sm font-semibold text-blue-600"
-          >{{ formatNumber(typedSummary.hours) }} hrs</span
-        >
+        <span class="text-sm font-semibold text-blue-600">{{
+          formatHoursDisplay(typedSummary.hours)
+        }}</span>
       </div>
     </div>
 
@@ -73,7 +73,7 @@ import { computed } from 'vue'
 import { FileX, Maximize2 } from 'lucide-vue-next'
 import { Button } from '../ui/button'
 import { schemas } from '../../api/generated/api'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, formatHoursDisplay } from '@/utils/string-formatting'
 import { z } from 'zod'
 
 type CostLine = z.infer<typeof schemas.CostLine>
@@ -151,13 +151,6 @@ const profit = computed(() => {
   if (!typedSummary.value) return 0
   return typedSummary.value.rev - typedSummary.value.cost
 })
-
-function formatNumber(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
 </script>
 
 <style scoped>

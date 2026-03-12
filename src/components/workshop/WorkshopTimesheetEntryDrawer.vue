@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/drawer'
 import { Ban, Save, Shuffle, Trash2 } from 'lucide-vue-next'
 import { computed } from 'vue'
+import { formatHoursDisplay } from '@/utils/string-formatting'
 
 interface FormState {
   jobId: string
@@ -143,7 +144,7 @@ const isBillable = computed({
               <div>
                 Duration:
                 <span class="font-semibold text-foreground">
-                  {{ formDurationHours.toFixed(2) }} h
+                  {{ formatHoursDisplay(formDurationHours) }}
                 </span>
               </div>
               <div class="flex flex-wrap gap-2 text-xs">

@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle, CalendarDays, Plus, RefreshCcw } from 'lucide-vue-next'
+import { formatHoursDisplay } from '@/utils/string-formatting'
 
 interface Props {
   formattedDate: string
@@ -38,7 +39,8 @@ const emit = defineEmits<{
           </Badge>
         </CardTitle>
         <p class="text-sm text-muted-foreground">
-          {{ selectedDaySummary.hours.toFixed(2) }} h &middot; {{ selectedDaySummary.jobs }} jobs
+          {{ formatHoursDisplay(selectedDaySummary.hours) }} &middot;
+          {{ selectedDaySummary.jobs }} jobs
         </p>
       </div>
       <div class="flex items-center gap-2">

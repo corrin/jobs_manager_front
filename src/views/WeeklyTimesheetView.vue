@@ -259,7 +259,7 @@
                     </td>
                     <td class="px-1.5 lg:px-2 py-2 lg:py-3 text-center">
                       <span class="text-sm lg:text-base font-bold text-gray-900">
-                        {{ formatHours(getTotalBillableHours()) }}h
+                        {{ formatHours(getTotalBillableHours()) }}
                       </span>
                     </td>
                     <td class="px-1.5 lg:px-2 py-2 lg:py-3 text-center">

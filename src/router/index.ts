@@ -264,6 +264,12 @@ const router = createRouter({
       },
     },
     {
+      path: '/reports/rdti-spend',
+      name: 'rdti-spend-report',
+      component: () => import('@/views/RDTISpendReportView.vue'),
+      meta: { requiresAuth: true, title: 'RDTI Spend Report - Jobs Manager', allowScroll: true },
+    },
+    {
       path: '/reports/payroll-reconciliation',
       name: 'payroll-reconciliation-report',
       component: () => import('@/views/PayrollReconciliationReportView.vue'),

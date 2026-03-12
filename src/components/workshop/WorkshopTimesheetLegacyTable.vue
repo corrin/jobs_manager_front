@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { schemas } from '@/api/generated/api'
 import { AlertTriangle, Pencil, Trash2 } from 'lucide-vue-next'
+import { formatHoursDisplay } from '@/utils/string-formatting'
 import type { z } from 'zod'
 
 type WorkshopTimesheetEntry = z.infer<typeof schemas.WorkshopTimesheetEntry>
@@ -76,7 +77,7 @@ const emit = defineEmits<{
               </div>
             </td>
             <td class="px-3 py-3 text-right font-semibold text-sm whitespace-nowrap">
-              {{ entry.hours.toFixed(2) }} h
+              {{ formatHoursDisplay(entry.hours) }}
             </td>
             <td class="px-3 py-2">
               <div class="flex items-center gap-2">

@@ -254,6 +254,12 @@
                   <BarChart3 class="w-4 h-4 mr-2" /> KPI Reports
                 </router-link>
                 <router-link
+                  to="/reports/rdti-spend"
+                  class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
+                >
+                  <FlaskConical class="w-4 h-4 mr-2" /> RDTI Spend
+                </router-link>
+                <router-link
                   to="/reports/sales-forecast"
                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:text-blue-600 hover:bg-blue-50 font-medium transition-all"
                 >
@@ -694,6 +700,13 @@
                         <BarChart3 class="w-4 h-4 mr-2" /> KPI Reports
                       </router-link>
                       <router-link
+                        to="/reports/rdti-spend"
+                        class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
+                        @click="closeMobileMenu"
+                      >
+                        <FlaskConical class="w-4 h-4 mr-2" /> RDTI Spend
+                      </router-link>
+                      <router-link
                         to="/reports/sales-forecast"
                         class="flex items-center px-2 py-1.5 text-sm text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-all"
                         @click="closeMobileMenu"
@@ -823,6 +836,7 @@ import {
   Users,
   DollarSign,
   Scale,
+  FlaskConical,
 } from 'lucide-vue-next'
 import { useAppLayout } from '@/composables/useAppLayout'
 import { adminPages } from '@/config/adminPages'

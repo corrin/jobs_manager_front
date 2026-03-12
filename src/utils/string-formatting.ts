@@ -97,12 +97,18 @@ export function formatCurrency(value: number | null | undefined, { decimals = 2 
 }
 
 /**
- * Formats hours to 2 decimal places, trimming trailing zeros.
- * e.g. 1 → "1", 1.5 → "1.5", 3.75 → "3.75"
+ * Formats hours as human-readable hours and minutes.
+ * e.g. 0 → "0h", 0.2 → "12m", 1 → "1h", 1.5 → "1h 30m", 3.2 → "3h 12m"
  */
 export function formatHoursDisplay(hours: number | null | undefined): string {
-  if (hours === null || hours === undefined || !Number.isFinite(hours)) return '0'
-  return parseFloat(hours.toFixed(2)).toString()
+  if (hours === null || hours === undefined || !Number.isFinite(hours)) return '0h'
+  const totalMinutes = Math.round(hours * 60)
+  const h = Math.floor(totalMinutes / 60)
+  const m = totalMinutes % 60
+  if (h === 0 && m === 0) return '0h'
+  if (h === 0) return `${m}m`
+  if (m === 0) return `${h}h`
+  return `${h}h ${m}m`
 }
 
 /**

@@ -9,6 +9,7 @@ import {
   formatTimeInputValue,
 } from '@/composables/useWorkshopTimesheetTimeUtils'
 import { formatDateKey } from '@/composables/useWorkshopTimesheetDay'
+import { formatHoursDisplay } from '@/utils/string-formatting'
 import type { ComponentPublicInstance } from 'vue'
 import type { z } from 'zod'
 import type { JobBudgetMeta } from '@/composables/useWorkshopJobBudgets'
@@ -82,7 +83,7 @@ export function useWorkshopCalendarSync(options: {
       ) ||
       entry.hours ||
       0
-    const durationLabel = duration ? `${duration.toFixed(2)}h` : ''
+    const durationLabel = duration ? formatHoursDisplay(duration) : ''
     return [jobNumber, jobName, durationLabel ? `(${durationLabel})` : ''].filter(Boolean).join(' ')
   }
 
@@ -94,7 +95,7 @@ export function useWorkshopCalendarSync(options: {
     const overBudget = budgetMeta?.overBudget ?? false
     const budgetTooltip =
       budgetMeta && budgetMeta.overBudget
-        ? `Over estimate: ${formatHoursValue(budgetMeta.actualHours)}h / ${formatHoursValue(budgetMeta.estimatedHours)}h`
+        ? `Over estimate: ${formatHoursValue(budgetMeta.actualHours)} / ${formatHoursValue(budgetMeta.estimatedHours)}`
         : ''
     return {
       id: entry.id,

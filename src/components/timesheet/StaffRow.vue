@@ -40,12 +40,12 @@
     <div class="grid grid-cols-3 gap-1.5 lg:gap-2 text-center">
       <div>
         <div class="text-xs lg:text-sm text-gray-500">Hours</div>
-        <div class="text-sm lg:text-base font-medium">{{ formatHours(staff.actual_hours) }}h</div>
+        <div class="text-sm lg:text-base font-medium">{{ formatHours(staff.actual_hours) }}</div>
       </div>
       <div>
         <div class="text-xs lg:text-sm text-gray-500">Scheduled</div>
         <div class="text-sm lg:text-base font-medium">
-          {{ formatHours(staff.scheduled_hours) }}h
+          {{ formatHours(staff.scheduled_hours) }}
         </div>
       </div>
       <div>
@@ -108,11 +108,10 @@
     <td class="px-1.5 lg:px-2 py-1.5 lg:py-2 whitespace-nowrap text-center">
       <div class="text-sm lg:text-base">
         <div class="font-medium text-gray-900 leading-tight">
-          {{ formatHours(staff.actual_hours)
-          }}<span class="text-xs lg:text-sm text-gray-500">h</span>
+          {{ formatHours(staff.actual_hours) }}
         </div>
         <div class="text-xs lg:text-sm text-gray-500 leading-tight">
-          / {{ formatHours(staff.scheduled_hours) }}h
+          / {{ formatHours(staff.scheduled_hours) }}
         </div>
 
         <div class="w-6 lg:w-8 bg-gray-200 rounded-full h-0.5 lg:h-1 mx-auto mt-0.5 lg:mt-1">

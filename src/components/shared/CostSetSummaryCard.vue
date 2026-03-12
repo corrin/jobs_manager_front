@@ -101,9 +101,9 @@
             </div>
             <div class="flex flex-col">
               <span class="text-xs text-gray-500">Total Hours</span>
-              <span class="text-lg font-semibold text-blue-600"
-                >{{ formatNumber(typedSummary.hours) }} hrs</span
-              >
+              <span class="text-lg font-semibold text-blue-600">{{
+                formatHoursDisplay(typedSummary.hours)
+              }}</span>
             </div>
           </div>
         </div>
@@ -122,7 +122,7 @@
 import { computed } from 'vue'
 import { FileX } from 'lucide-vue-next'
 import { schemas } from '../../api/generated/api'
-import { formatCurrency } from '@/utils/string-formatting'
+import { formatCurrency, formatHoursDisplay } from '@/utils/string-formatting'
 import { z } from 'zod'
 
 type CostLine = z.infer<typeof schemas.CostLine>
@@ -271,13 +271,6 @@ const breakdown = computed(() => {
   console.log('[CostSetSummaryCard] breakdown result:', result)
   return result
 })
-
-function formatNumber(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(value)
-}
 
 function formatPercentage(value: number): string {
   return new Intl.NumberFormat('en-US', {

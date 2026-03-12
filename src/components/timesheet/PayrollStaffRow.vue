@@ -61,12 +61,12 @@
           <div
             v-if="hasOvertime(idx)"
             class="h-1 lg:h-1.5 w-1 lg:w-1.5 bg-orange-500 rounded-full"
-            :title="`Overtime: ${formatHours(getTotalOvertime(idx))}h`"
+            :title="`Overtime: ${formatHours(getTotalOvertime(idx))}`"
           ></div>
           <div
             v-if="hasLeave(idx)"
             class="h-1 lg:h-1.5 w-1 lg:w-1.5 bg-blue-500 rounded-full"
-            :title="`Leave: ${formatHours(getTotalLeave(idx))}h`"
+            :title="`Leave: ${formatHours(getTotalLeave(idx))}`"
           ></div>
         </div>
 
@@ -76,25 +76,25 @@
         >
           <div class="space-y-0.5 lg:space-y-1">
             <div v-if="staff.weekly_hours[idx].billed_hours" class="text-xs lg:text-sm">
-              Billed: {{ formatHours(staff.weekly_hours[idx].billed_hours) }}h
+              Billed: {{ formatHours(staff.weekly_hours[idx].billed_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].unbilled_hours" class="text-xs lg:text-sm">
-              Unbilled: {{ formatHours(staff.weekly_hours[idx].unbilled_hours) }}h
+              Unbilled: {{ formatHours(staff.weekly_hours[idx].unbilled_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].overtime_1_5x_hours" class="text-xs lg:text-sm">
-              1.5x Time: {{ formatHours(staff.weekly_hours[idx].overtime_1_5x_hours) }}h
+              1.5x Time: {{ formatHours(staff.weekly_hours[idx].overtime_1_5x_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].overtime_2x_hours" class="text-xs lg:text-sm">
-              2x Time: {{ formatHours(staff.weekly_hours[idx].overtime_2x_hours) }}h
+              2x Time: {{ formatHours(staff.weekly_hours[idx].overtime_2x_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].sick_leave_hours" class="text-xs lg:text-sm">
-              Sick Leave: {{ formatHours(staff.weekly_hours[idx].sick_leave_hours) }}h
+              Sick Leave: {{ formatHours(staff.weekly_hours[idx].sick_leave_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].annual_leave_hours" class="text-xs lg:text-sm">
-              Annual Leave: {{ formatHours(staff.weekly_hours[idx].annual_leave_hours) }}h
+              Annual Leave: {{ formatHours(staff.weekly_hours[idx].annual_leave_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].bereavement_leave_hours" class="text-xs lg:text-sm">
-              Bereavement Leave: {{ formatHours(staff.weekly_hours[idx].bereavement_leave_hours) }}h
+              Bereavement Leave: {{ formatHours(staff.weekly_hours[idx].bereavement_leave_hours) }}
             </div>
           </div>
           <div
@@ -115,34 +115,34 @@
           <Check
             v-if="staff.total_billed_hours > 0"
             class="h-3 w-3 lg:h-3.5 lg:w-3.5 text-green-600"
-            :title="`Billed: ${formatHours(staff.total_billed_hours)}h`"
+            :title="`Billed: ${formatHours(staff.total_billed_hours)}`"
           />
           <X
             v-if="staff.total_unbilled_hours > 0"
             class="h-3 w-3 lg:h-3.5 lg:w-3.5 text-gray-500"
-            :title="`Unbilled: ${formatHours(staff.total_unbilled_hours)}h`"
+            :title="`Unbilled: ${formatHours(staff.total_unbilled_hours)}`"
           />
           <span
             v-if="staff.total_overtime_1_5x_hours > 0"
             class="text-[10px] lg:text-xs font-bold text-orange-600"
-            :title="`1.5x Time: ${formatHours(staff.total_overtime_1_5x_hours)}h`"
+            :title="`1.5x Time: ${formatHours(staff.total_overtime_1_5x_hours)}`"
             >1.5</span
           >
           <span
             v-if="staff.total_overtime_2x_hours > 0"
             class="text-[10px] lg:text-xs font-bold text-red-600"
-            :title="`2x Time: ${formatHours(staff.total_overtime_2x_hours)}h`"
+            :title="`2x Time: ${formatHours(staff.total_overtime_2x_hours)}`"
             >2x</span
           >
           <Heart
             v-if="staff.total_sick_leave_hours > 0"
             class="h-3 w-3 lg:h-3.5 lg:w-3.5 text-blue-600"
-            :title="`Sick Leave: ${formatHours(staff.total_sick_leave_hours)}h`"
+            :title="`Sick Leave: ${formatHours(staff.total_sick_leave_hours)}`"
           />
           <Plane
             v-if="staff.total_annual_leave_hours > 0"
             class="h-3 w-3 lg:h-3.5 lg:w-3.5 text-purple-600"
-            :title="`Annual Leave: ${formatHours(staff.total_annual_leave_hours)}h`"
+            :title="`Annual Leave: ${formatHours(staff.total_annual_leave_hours)}`"
           />
         </div>
       </div>
@@ -151,7 +151,7 @@
     <!-- Billable Hours Column -->
     <td class="px-1.5 lg:px-2 py-1.5 lg:py-2 text-center">
       <span class="text-sm lg:text-base font-medium text-gray-700">
-        {{ formatHours(staff.total_billable_hours) }}h
+        {{ formatHours(staff.total_billable_hours) }}
       </span>
     </td>
 
@@ -184,9 +184,9 @@
         </span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5 text-center">
-        <span class="text-xs lg:text-sm font-medium text-green-700"
-          >{{ formatHours(staff.total_billed_hours) }}h</span
-        >
+        <span class="text-xs lg:text-sm font-medium text-green-700">{{
+          formatHours(staff.total_billed_hours)
+        }}</span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
@@ -211,9 +211,9 @@
         </span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5 text-center">
-        <span class="text-xs lg:text-sm font-medium text-gray-700"
-          >{{ formatHours(staff.total_unbilled_hours) }}h</span
-        >
+        <span class="text-xs lg:text-sm font-medium text-gray-700">{{
+          formatHours(staff.total_unbilled_hours)
+        }}</span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
@@ -238,9 +238,9 @@
         </span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5 text-center">
-        <span class="text-xs lg:text-sm font-medium text-orange-700"
-          >{{ formatHours(staff.total_overtime_1_5x_hours) }}h</span
-        >
+        <span class="text-xs lg:text-sm font-medium text-orange-700">{{
+          formatHours(staff.total_overtime_1_5x_hours)
+        }}</span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
@@ -265,9 +265,9 @@
         </span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5 text-center">
-        <span class="text-xs lg:text-sm font-medium text-red-700"
-          >{{ formatHours(staff.total_overtime_2x_hours) }}h</span
-        >
+        <span class="text-xs lg:text-sm font-medium text-red-700">{{
+          formatHours(staff.total_overtime_2x_hours)
+        }}</span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
@@ -292,9 +292,9 @@
         </span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5 text-center">
-        <span class="text-xs lg:text-sm font-medium text-blue-700"
-          >{{ formatHours(staff.total_sick_leave_hours) }}h</span
-        >
+        <span class="text-xs lg:text-sm font-medium text-blue-700">{{
+          formatHours(staff.total_sick_leave_hours)
+        }}</span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
@@ -319,9 +319,9 @@
         </span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5 text-center">
-        <span class="text-xs lg:text-sm font-medium text-purple-700"
-          >{{ formatHours(staff.total_annual_leave_hours) }}h</span
-        >
+        <span class="text-xs lg:text-sm font-medium text-purple-700">{{
+          formatHours(staff.total_annual_leave_hours)
+        }}</span>
       </td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
       <td class="px-1.5 lg:px-2 py-1 lg:py-1.5"></td>
@@ -405,7 +405,7 @@ function getDayTooltip(day: WeeklyDayData, idx: number): string {
 
   const overtime = getTotalOvertime(idx)
   if (overtime > 0) {
-    parts.push(`Overtime: ${formatHours(overtime)}h`)
+    parts.push(`Overtime: ${formatHours(overtime)}`)
   }
 
   return parts.length > 0 ? parts.join(' | ') : 'No data'

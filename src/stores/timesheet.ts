@@ -8,6 +8,7 @@ import type { z } from 'zod'
 import { toast } from 'vue-sonner'
 import { FeatureFlagsService } from '@/services/feature-flags.service'
 import { validateFields } from '@/utils/contractValidation'
+import { formatHoursDisplay } from '@/utils/string-formatting'
 type CostLineMeta = Record<string, unknown> & {
   date?: string
   staff_id?: string
@@ -565,7 +566,7 @@ export const useTimesheetStore = defineStore('timesheet', () => {
   }
 
   function formatHours(hours: number): string {
-    return hours.toFixed(2)
+    return formatHoursDisplay(hours)
   }
 
   function addAttachedJob(job: Job) {

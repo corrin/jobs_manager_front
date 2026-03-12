@@ -21,7 +21,7 @@
             class="flex items-center space-x-1"
           >
             <span class="text-xs lg:text-sm text-orange-600 font-medium">
-              OT: {{ formatHours(staff.total_overtime_hours) }}h
+              OT: {{ formatHours(staff.total_overtime_hours) }}
             </span>
           </div>
         </div>
@@ -56,12 +56,12 @@
           <div
             v-if="hasOvertime(idx)"
             class="h-1 lg:h-1.5 w-1 lg:w-1.5 bg-orange-500 rounded-full"
-            :title="`Overtime: ${formatHours(getTotalOvertime(idx))}h`"
+            :title="`Overtime: ${formatHours(getTotalOvertime(idx))}`"
           ></div>
           <div
             v-if="hasLeave(idx)"
             class="h-1 lg:h-1.5 w-1 lg:w-1.5 bg-blue-500 rounded-full"
-            :title="`Leave: ${formatHours(getTotalLeave(idx))}h`"
+            :title="`Leave: ${formatHours(getTotalLeave(idx))}`"
           ></div>
         </div>
 
@@ -72,25 +72,25 @@
         >
           <div class="space-y-0.5 lg:space-y-1">
             <div v-if="staff.weekly_hours[idx].billed_hours" class="text-xs lg:text-sm">
-              Billed: {{ formatHours(staff.weekly_hours[idx].billed_hours) }}h
+              Billed: {{ formatHours(staff.weekly_hours[idx].billed_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].unbilled_hours" class="text-xs lg:text-sm">
-              Unbilled: {{ formatHours(staff.weekly_hours[idx].unbilled_hours) }}h
+              Unbilled: {{ formatHours(staff.weekly_hours[idx].unbilled_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].overtime_1_5x_hours" class="text-xs lg:text-sm">
-              1.5x Time: {{ formatHours(staff.weekly_hours[idx].overtime_1_5x_hours) }}h
+              1.5x Time: {{ formatHours(staff.weekly_hours[idx].overtime_1_5x_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].overtime_2x_hours" class="text-xs lg:text-sm">
-              2x Time: {{ formatHours(staff.weekly_hours[idx].overtime_2x_hours) }}h
+              2x Time: {{ formatHours(staff.weekly_hours[idx].overtime_2x_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].sick_leave_hours" class="text-xs lg:text-sm">
-              Sick Leave: {{ formatHours(staff.weekly_hours[idx].sick_leave_hours) }}h
+              Sick Leave: {{ formatHours(staff.weekly_hours[idx].sick_leave_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].annual_leave_hours" class="text-xs lg:text-sm">
-              Annual Leave: {{ formatHours(staff.weekly_hours[idx].annual_leave_hours) }}h
+              Annual Leave: {{ formatHours(staff.weekly_hours[idx].annual_leave_hours) }}
             </div>
             <div v-if="staff.weekly_hours[idx].bereavement_leave_hours" class="text-xs lg:text-sm">
-              Bereavement Leave: {{ formatHours(staff.weekly_hours[idx].bereavement_leave_hours) }}h
+              Bereavement Leave: {{ formatHours(staff.weekly_hours[idx].bereavement_leave_hours) }}
             </div>
           </div>
           <div
@@ -189,7 +189,7 @@ const getDayTooltip = (day: WeeklyDayData, idx: number): string => {
 
   const overtime = getTotalOvertime(idx)
   if (overtime > 0) {
-    parts.push(`Overtime: ${formatHours(overtime)}h`)
+    parts.push(`Overtime: ${formatHours(overtime)}`)
   }
 
   return parts.length > 0 ? parts.join(' | ') : 'No data'
